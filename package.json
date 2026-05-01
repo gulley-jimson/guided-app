@@ -1,6 +1,6 @@
 {
   "name": "guided",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "description": "Floating always-on-top companion panel",
   "main": "electron/main.js",
   "scripts": {
