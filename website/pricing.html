@@ -325,7 +325,11 @@
       </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js" type="text/javascript"></script>
+    <script
+      data-clerk-publishable-key="pk_test_cHJvcGVyLWJhdC00LmNsZXJrLmFjY291bnRzLmRldiQ"
+      src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+      type="text/javascript">
+    </script>
     <script>
       (function () {
         var BACKEND_URL = 'https://guided-app-production.up.railway.app';
@@ -359,10 +363,11 @@
             throw new Error('Clerk failed to load.');
           }
           // Clerk's CDN bundle auto-instantiates window.Clerk as a singleton.
-          // Call load() with the publishable key — do NOT use `new`.
+          // The publishable key comes from the data-clerk-publishable-key attribute
+          // on the script tag, so load() is called with no args.
           clerk = window.Clerk;
           if (!clerk.loaded) {
-            await clerk.load({ publishableKey: CLERK_KEY });
+            await clerk.load();
           }
           return clerk;
         }
