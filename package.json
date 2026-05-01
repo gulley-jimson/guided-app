@@ -1,0 +1,69 @@
+{
+  "name": "guided",
+  "version": "0.1.0",
+  "description": "Floating always-on-top companion panel",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "concurrently -k \"npm:dev:vite\" \"npm:dev:electron\"",
+    "dev:vite": "vite",
+    "dev:electron": "wait-on http://localhost:5173 && electron .",
+    "build": "vite build",
+    "build:icons": "node scripts/build-icons.js",
+    "start": "electron .",
+    "dist": "npm run build && npm run build:icons && electron-builder",
+    "dist:win": "npm run build && npm run build:icons && electron-builder --win",
+    "dist:mac": "npm run build && npm run build:icons && electron-builder --mac"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "concurrently": "^9.1.0",
+    "electron": "^33.2.0",
+    "electron-builder": "^26.8.1",
+    "png2icons": "^2.0.1",
+    "postcss": "^8.4.49",
+    "sharp": "^0.34.5",
+    "tailwindcss": "^3.4.16",
+    "vite": "^6.0.3",
+    "wait-on": "^8.0.1"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.92.0",
+    "active-win": "^8.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "build": {
+    "appId": "build.guided.app",
+    "productName": "Guided",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*",
+      "package.json"
+    ],
+    "asar": true,
+    "win": {
+      "target": "nsis",
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "perMachine": false,
+      "shortcutName": "Guided"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "build/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "dmg": {
+      "title": "Guided"
+    }
+  }
+}

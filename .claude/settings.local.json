@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(node -e \"require\\('./electron/main.js'\\)\")",
+      "Bash(node --check electron/main.js)",
+      "Bash(node --check electron/preload.js)",
+      "Bash(tasklist)",
+      "Skill(claude-api)",
+      "Bash(taskkill //F //IM electron.exe //T)",
+      "Bash(node -e \"const aw = require\\('active-win'\\); console.log\\(typeof aw, Object.keys\\(aw\\)\\)\")"
+    ]
+  }
+}
