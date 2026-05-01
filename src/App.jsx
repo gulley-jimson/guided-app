@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Header from './components/Header.jsx';
 import Tabs from './components/Tabs.jsx';
 import ChatTab from './components/ChatTab.jsx';
@@ -9,7 +9,8 @@ import SettingsTab from './components/SettingsTab.jsx';
 import Onboarding from './components/Onboarding.jsx';
 import { useLocalState } from './hooks/useLocalState.js';
 import { useActiveApp } from './hooks/useActiveApp.js';
-import { ENV_API_KEY, generateRoadmap } from './services/claude.js';
+import { useClerkAuth } from './hooks/useClerkAuth.js';
+import { ENV_API_KEY, BACKEND_URL, generateRoadmap } from './services/claude.js';
 import { ROADMAP_READY_MESSAGE } from './utils/offer.js';
 
 const TABS = ['Chat', 'Projects', 'Roadmap', 'Concepts', 'Settings'];
@@ -39,9 +40,15 @@ export default function App() {
   const [storedKey, setStoredKey] = useLocalState('guided.apiKey', '');
   const [projects, setProjects] = useLocalState('guided.projects', migrateLegacyConversations);
   const [activeId, setActiveId] = useLocalState('guided.activeId', null);
+  const [subscriptionMode, setSubscriptionMode] = useLocalState('guided.subscriptionMode', false);
+  const [subscriptionPlan, setSubscriptionPlan] = useLocalState('guided.subscriptionPlan', null);
+  const [subscriptionActive, setSubscriptionActive] = useState(false);
   const activeApp = useActiveApp();
+  const clerk = useClerkAuth();
 
   const apiKey = storedKey || ENV_API_KEY;
+  const usingSubscription = subscriptionMode && subscriptionActive;
+  const onboardingComplete = Boolean(apiKey) || usingSubscription;
 
   const activeProject = useMemo(
     () => projects.find((p) => p.id === activeId) ?? null,
@@ -57,6 +64,42 @@ export default function App() {
       setActiveId(null);
     }
   }, [projects, activeId, setActiveId]);
+
+  // Verify the persisted subscription state with the backend whenever Clerk reports a signed-in user.
+  useEffect(() => {
+    let cancelled = false;
+    async function verify() {
+      if (!subscriptionMode || !clerk.available || !clerk.isSignedIn || !clerk.userId) {
+        if (!cancelled) setSubscriptionActive(false);
+        return;
+      }
+      try {
+        const res = await fetch(`${BACKEND_URL}/subscription/${encodeURIComponent(clerk.userId)}`);
+        if (!res.ok) throw new Error('verify failed');
+        const data = await res.json();
+        if (cancelled) return;
+        setSubscriptionActive(Boolean(data?.active));
+        if (data?.plan) setSubscriptionPlan(data.plan);
+      } catch {
+        if (!cancelled) setSubscriptionActive(false);
+      }
+    }
+    verify();
+    return () => {
+      cancelled = true;
+    };
+  }, [subscriptionMode, clerk.available, clerk.isSignedIn, clerk.userId, setSubscriptionPlan]);
+
+  const getSessionToken = useCallback(async () => {
+    if (!clerk.available || !clerk.isSignedIn) return null;
+    try {
+      return await clerk.getToken();
+    } catch {
+      return null;
+    }
+  }, [clerk]);
+
+  const chatMode = usingSubscription ? 'subscription' : 'byok';
 
   function updateProject(id, updater) {
     setProjects((prev) =>
@@ -277,12 +320,24 @@ export default function App() {
     setActiveTab('Projects');
   }
 
+  function completeSubscriptionOnboarding({ plan }) {
+    setSubscriptionMode(true);
+    if (plan) setSubscriptionPlan(plan);
+    setSubscriptionActive(true);
+    setActiveTab('Projects');
+  }
+
   return (
     <div className="flex h-full w-full flex-col bg-panel-bg text-panel-text border border-panel-border rounded-xl overflow-hidden">
       <Header />
-      {!apiKey ? (
+      {!onboardingComplete ? (
         <div className="flex-1 min-h-0">
-          <Onboarding onSubmitKey={completeOnboarding} />
+          <Onboarding
+            onSubmitKey={completeOnboarding}
+            onSubscribeComplete={completeSubscriptionOnboarding}
+            clerk={clerk}
+            backendUrl={BACKEND_URL}
+          />
         </div>
       ) : (
         <>
@@ -291,6 +346,8 @@ export default function App() {
             {activeTab === 'Chat' && (
               <ChatTab
                 apiKey={apiKey}
+                chatMode={chatMode}
+                getSessionToken={getSessionToken}
                 project={activeProject}
                 activeApp={activeApp}
                 onUpdate={(updater) =>
@@ -357,6 +414,13 @@ export default function App() {
                 onSaveKey={setStoredKey}
                 theme={theme}
                 onThemeChange={setTheme}
+                subscription={{
+                  active: subscriptionActive,
+                  plan: subscriptionPlan,
+                  email: clerk.email,
+                  signedIn: clerk.isSignedIn,
+                  available: clerk.available,
+                }}
               />
             )}
           </div>

@@ -64,6 +64,8 @@ function buildRoadmapStartChips(firstPhase) {
 
 export default function ChatTab({
   apiKey,
+  chatMode = 'byok',
+  getSessionToken,
   project,
   activeApp,
   onUpdate,
@@ -226,7 +228,9 @@ export default function ChatTab({
 
     try {
       await streamChat({
+        mode: chatMode,
         apiKey,
+        sessionToken: chatMode === 'subscription' ? await (getSessionToken?.() ?? null) : null,
         messages: apiMessages,
         projectDescription: project.description,
         activeApp,
@@ -410,7 +414,9 @@ export default function ChatTab({
 
     try {
       await streamChat({
+        mode: chatMode,
         apiKey,
+        sessionToken: chatMode === 'subscription' ? await (getSessionToken?.() ?? null) : null,
         messages: apiMessages,
         projectDescription: project.description,
         activeApp,
@@ -470,7 +476,9 @@ export default function ChatTab({
 
     try {
       await streamChat({
+        mode: chatMode,
         apiKey,
+        sessionToken: chatMode === 'subscription' ? await (getSessionToken?.() ?? null) : null,
         messages: apiMessages,
         projectDescription: project.description,
         activeApp,

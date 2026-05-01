@@ -8,24 +8,15 @@ export const SYSTEM_PROMPT =
   "You are Guided, an AI companion that helps users learn software by working through their own projects. Be concise, encouraging, and practical. Always relate your advice to what the user is actually trying to build. Never use markdown formatting in your responses — no # headers, no **bold**, no bullet points with dashes. Write in plain conversational prose, like you're talking to someone, not writing a document. Never ask more than one question in a single message. Ask the most important question first, then ask follow-ups in subsequent messages once the user has answered. Whenever you explain a new term, tool, or technique that the user may want to remember, append it to your message in this format on a new line BEFORE the CHIPS line: CONCEPT:{\"term\":\"Layer Mask\",\"definition\":\"A layer mask lets you hide or reveal parts of a layer without permanently erasing anything. Think of it as a stencil attached to your layer — black hides, white reveals.\"} Only add one concept per message, only for genuinely new terms worth remembering, and keep definitions conversational and jargon-free. When guiding the user to click something specific you can see on their screen (typically right after they've shared a screenshot), append POINTER on a new line BEFORE the CHIPS line in this format: POINTER:{\"x\":0.65,\"y\":0.32,\"label\":\"Click here\"} — using normalized x/y coordinates (0 to 1) of the target element. Only use POINTER when you can confidently identify a specific UI element on the user's screen. When a visual reference would help the user, append SEARCH_IMAGE on a new line BEFORE the CHIPS line in this format: SEARCH_IMAGE:{\"query\":\"vintage coffee shop logo examples\"} — using a specific search query. Use this sparingly, only when seeing examples is genuinely useful. At the very end of every response, on its own new line, append three short follow-up suggestions in this exact format: CHIPS:[\"option 1\",\"option 2\",\"option 3\"]. Use CHIPS_MULTI:[\"option 1\",\"option 2\"] (same JSON shape, different token) when the question has multiple valid answers — for example 'which tools do you use?' or 'what are you interested in learning?' — where the user might want to pick several. Use regular CHIPS for single-answer questions like 'are you a beginner or experienced?' or for general follow-ups. Chips should always be short responses IN THE USER'S VOICE — things the user might plausibly want to say back, not suggestions or ideas you're offering them. Never put specific names, titles, or creative suggestions in chips. For example if you ask 'what is your shop called?' the chips should be things like 'I have a name already', 'I need help choosing a name', 'not sure yet' — not actual name suggestions. After asking what the user wants to work on first, always suggest relevant chips based on their project and current roadmap phase. Each chip should be under 8 words. Use valid JSON. Don't introduce or label the line — just output it.";
 
 export const ENV_API_KEY = import.meta.env.ANTHROPIC_API_KEY || '';
+export const BACKEND_URL = import.meta.env.BACKEND_URL || 'http://localhost:3001';
 
-export async function streamChat({
-  apiKey,
-  messages,
+function buildSystemBlocks({
   projectDescription,
   activeApp,
   roadmapOfferEnabled,
   visionActive,
   activePhase,
-  onDelta,
-  signal,
 }) {
-  if (!apiKey) {
-    throw new Error('No API key. Add one in Settings or to .env, then retry.');
-  }
-
-  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
-
   const system = [
     { type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } },
   ];
@@ -58,7 +49,46 @@ export async function streamChat({
       .join('\n');
     system.push({ type: 'text', text: phaseBlock });
   }
+  return system;
+}
 
+export async function streamChat({
+  mode = 'byok',
+  apiKey,
+  sessionToken,
+  messages,
+  projectDescription,
+  activeApp,
+  roadmapOfferEnabled,
+  visionActive,
+  activePhase,
+  onDelta,
+  signal,
+}) {
+  const system = buildSystemBlocks({
+    projectDescription,
+    activeApp,
+    roadmapOfferEnabled,
+    visionActive,
+    activePhase,
+  });
+
+  if (mode === 'subscription') {
+    return streamViaBackend({
+      sessionToken,
+      system,
+      messages,
+      max_tokens: 4096,
+      onDelta,
+      signal,
+    });
+  }
+
+  if (!apiKey) {
+    throw new Error('No API key. Add one in Settings or to .env, then retry.');
+  }
+
+  const client = new Anthropic({ apiKey, dangerouslyAllowBrowser: true });
   const stream = client.messages.stream(
     {
       model: MODEL,
@@ -74,6 +104,86 @@ export async function streamChat({
   });
 
   return stream.finalMessage();
+}
+
+async function streamViaBackend({ sessionToken, system, messages, max_tokens, onDelta, signal }) {
+  if (!sessionToken) {
+    throw new Error('Not signed in. Sign in to continue.');
+  }
+
+  const response = await fetch(`${BACKEND_URL}/chat`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      token: sessionToken,
+      messages,
+      system,
+      max_tokens: max_tokens ?? 4096,
+      model: MODEL,
+    }),
+    signal,
+  });
+
+  if (!response.ok) {
+    let detail;
+    try {
+      detail = await response.json();
+    } catch {}
+    const error = new Error(detail?.error || `Backend error (${response.status})`);
+    error.status = response.status;
+    throw error;
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error('No response stream from backend.');
+  }
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let streamError = null;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    let sepIdx;
+    while ((sepIdx = buffer.indexOf('\n\n')) !== -1) {
+      const chunk = buffer.slice(0, sepIdx);
+      buffer = buffer.slice(sepIdx + 2);
+      const parsed = parseSseChunk(chunk);
+      if (!parsed) continue;
+      const { event, data } = parsed;
+      if (event === 'delta' && typeof data?.text === 'string') {
+        onDelta(data.text);
+      } else if (event === 'done') {
+        return;
+      } else if (event === 'error') {
+        streamError = new Error(data?.message || 'Stream error');
+      }
+    }
+  }
+
+  if (streamError) throw streamError;
+}
+
+function parseSseChunk(chunk) {
+  if (!chunk) return null;
+  let event = 'message';
+  let dataStr = '';
+  for (const line of chunk.split('\n')) {
+    if (line.startsWith('event: ')) event = line.slice(7).trim();
+    else if (line.startsWith('data: ')) dataStr += line.slice(6);
+  }
+  let data = null;
+  if (dataStr) {
+    try {
+      data = JSON.parse(dataStr);
+    } catch {
+      data = null;
+    }
+  }
+  return { event, data };
 }
 
 export async function generateRoadmap({ apiKey, projectName, projectDescription, conversation }) {

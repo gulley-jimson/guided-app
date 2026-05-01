@@ -5,3 +5,8 @@ release
 *.log
 .env
 .env.local
+
+# Backend
+backend/.env
+backend/data/
+backend/node_modules/
