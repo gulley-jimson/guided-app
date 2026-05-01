@@ -359,8 +359,12 @@
           if (typeof window.Clerk === 'undefined') {
             throw new Error('Clerk failed to load.');
           }
-          clerk = new window.Clerk(CLERK_KEY);
-          await clerk.load();
+          // Clerk's CDN bundle auto-instantiates window.Clerk as a singleton.
+          // Call load() with the publishable key — do NOT use `new`.
+          clerk = window.Clerk;
+          if (!clerk.loaded) {
+            await clerk.load({ publishableKey: CLERK_KEY });
+          }
           return clerk;
         }
 

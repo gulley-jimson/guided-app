@@ -298,9 +298,13 @@
           if (typeof window.Clerk === 'undefined') {
             throw new Error('Clerk failed to load.');
           }
-          var c = new window.Clerk(CLERK_KEY);
-          await c.load();
-          return c;
+          // Clerk's CDN bundle auto-instantiates window.Clerk as a singleton.
+          // Call load() with the publishable key — do NOT use `new`.
+          var clerk = window.Clerk;
+          if (!clerk.loaded) {
+            await clerk.load({ publishableKey: CLERK_KEY });
+          }
+          return clerk;
         }
 
         async function fetchSubscription(userId) {
