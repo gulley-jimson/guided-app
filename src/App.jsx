@@ -40,14 +40,13 @@ export default function App() {
   const [storedKey, setStoredKey] = useLocalState('guided.apiKey', '');
   const [projects, setProjects] = useLocalState('guided.projects', migrateLegacyConversations);
   const [activeId, setActiveId] = useLocalState('guided.activeId', null);
-  const [subscriptionMode, setSubscriptionMode] = useLocalState('guided.subscriptionMode', false);
   const [subscriptionPlan, setSubscriptionPlan] = useLocalState('guided.subscriptionPlan', null);
   const [subscriptionActive, setSubscriptionActive] = useState(false);
   const activeApp = useActiveApp();
   const clerk = useClerkAuth();
 
   const apiKey = storedKey || ENV_API_KEY;
-  const usingSubscription = subscriptionMode && subscriptionActive;
+  const usingSubscription = clerk.isSignedIn && subscriptionActive;
   const onboardingComplete = Boolean(apiKey) || usingSubscription;
 
   const activeProject = useMemo(
@@ -65,12 +64,17 @@ export default function App() {
     }
   }, [projects, activeId, setActiveId]);
 
-  // Verify the persisted subscription state with the backend whenever Clerk reports a signed-in user.
+  // Verify subscription state with the backend whenever Clerk reports a signed-in user.
+  // Runs unconditionally on signed-in changes — Settings needs to know whether a fresh signin
+  // already has an active subscription so it can show the right UI.
   useEffect(() => {
     let cancelled = false;
     async function verify() {
-      if (!subscriptionMode || !clerk.available || !clerk.isSignedIn || !clerk.userId) {
-        if (!cancelled) setSubscriptionActive(false);
+      if (!clerk.available || !clerk.isSignedIn || !clerk.userId) {
+        if (!cancelled) {
+          setSubscriptionActive(false);
+          setSubscriptionPlan(null);
+        }
         return;
       }
       try {
@@ -79,7 +83,7 @@ export default function App() {
         const data = await res.json();
         if (cancelled) return;
         setSubscriptionActive(Boolean(data?.active));
-        if (data?.plan) setSubscriptionPlan(data.plan);
+        setSubscriptionPlan(data?.plan ?? null);
       } catch {
         if (!cancelled) setSubscriptionActive(false);
       }
@@ -88,7 +92,20 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [subscriptionMode, clerk.available, clerk.isSignedIn, clerk.userId, setSubscriptionPlan]);
+  }, [clerk.available, clerk.isSignedIn, clerk.userId, setSubscriptionPlan]);
+
+  function applySubscriptionUpdate({ active, plan }) {
+    if (typeof active === 'boolean') setSubscriptionActive(active);
+    if (plan !== undefined) setSubscriptionPlan(plan);
+  }
+
+  async function signOutGuidedAccount() {
+    try {
+      await clerk.signOut?.();
+    } catch {}
+    setSubscriptionActive(false);
+    setSubscriptionPlan(null);
+  }
 
   const getSessionToken = useCallback(async () => {
     if (!clerk.available || !clerk.isSignedIn) return null;
@@ -321,9 +338,7 @@ export default function App() {
   }
 
   function completeSubscriptionOnboarding({ plan }) {
-    setSubscriptionMode(true);
-    if (plan) setSubscriptionPlan(plan);
-    setSubscriptionActive(true);
+    applySubscriptionUpdate({ active: true, plan });
     setActiveTab('Projects');
   }
 
@@ -414,13 +429,12 @@ export default function App() {
                 onSaveKey={setStoredKey}
                 theme={theme}
                 onThemeChange={setTheme}
-                subscription={{
-                  active: subscriptionActive,
-                  plan: subscriptionPlan,
-                  email: clerk.email,
-                  signedIn: clerk.isSignedIn,
-                  available: clerk.available,
-                }}
+                clerk={clerk}
+                subscriptionActive={subscriptionActive}
+                subscriptionPlan={subscriptionPlan}
+                onSubscriptionStatusChange={applySubscriptionUpdate}
+                onSignOutGuided={signOutGuidedAccount}
+                backendUrl={BACKEND_URL}
               />
             )}
           </div>

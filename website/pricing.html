@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pricing — Guided</title>
+    <meta
+      name="description"
+      content="Pick a plan that fits — monthly or yearly. Cancel anytime."
+    />
+    <meta name="theme-color" content="#0b0d10" />
+    <style>
+      html.is-locked body > *:not(#gate-overlay) { display: none !important; }
+      #gate-overlay {
+        position: fixed; inset: 0; z-index: 999999;
+        background: #0f0f13;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        color: #e6e8eb;
+      }
+      #gate-overlay .gate-card {
+        width: 100%; max-width: 360px;
+        padding: 32px;
+        background: #15181d;
+        border: 1px solid #23272e;
+        border-radius: 14px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+      }
+      #gate-overlay .gate-logo {
+        display: flex; align-items: center; justify-content: center;
+        gap: 10px; margin-bottom: 24px;
+      }
+      #gate-overlay .gate-mark {
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #a78bfa, #6366f1);
+        display: grid; place-items: center;
+        box-shadow: 0 6px 20px rgba(167, 139, 250, 0.35);
+      }
+      #gate-overlay .gate-mark svg { width: 20px; height: 20px; color: #fff; }
+      #gate-overlay .gate-name {
+        font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+      }
+      #gate-overlay input {
+        width: 100%; box-sizing: border-box;
+        padding: 12px 14px;
+        background: #0b0d10;
+        border: 1px solid #2f3441;
+        border-radius: 8px;
+        color: #e6e8eb;
+        font-size: 14px; outline: none;
+        margin-bottom: 12px;
+      }
+      #gate-overlay input:focus { border-color: #a78bfa; }
+      #gate-overlay button {
+        width: 100%; padding: 12px;
+        background: #a78bfa; color: #0b0d10;
+        border: none; border-radius: 8px;
+        font-size: 14px; font-weight: 600; cursor: pointer;
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      #gate-overlay button:hover { background: #8b5cf6; color: #fff; }
+      @keyframes gateShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-8px); }
+        40%, 80% { transform: translateX(8px); }
+      }
+      #gate-overlay .gate-card.shake {
+        animation: gateShake 0.4s ease-in-out;
+        border-color: #f87171;
+      }
+
+      .pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        max-width: 760px;
+        margin: 0 auto;
+      }
+      .plan-card {
+        position: relative;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 32px 28px;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        transition: border-color 0.2s ease, transform 0.2s ease;
+      }
+      .plan-card:hover {
+        border-color: var(--border-strong);
+        transform: translateY(-2px);
+      }
+      .plan-card.featured {
+        border-color: rgba(167, 139, 250, 0.45);
+        background: linear-gradient(180deg, rgba(167, 139, 250, 0.08), var(--surface) 60%);
+        box-shadow: 0 10px 30px rgba(167, 139, 250, 0.12);
+      }
+      .plan-badge {
+        position: absolute;
+        top: -12px;
+        right: 24px;
+        background: var(--accent);
+        color: #0b0d10;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 4px 10px;
+        border-radius: 999px;
+      }
+      .plan-name {
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      .plan-price {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+      }
+      .plan-price .amount {
+        font-size: 44px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .plan-price .period {
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+      .plan-tagline {
+        color: var(--text-muted);
+        font-size: 14px;
+      }
+      .plan-features {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .plan-features li {
+        font-size: 14px;
+        color: var(--text);
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+      }
+      .plan-features li::before {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: var(--accent);
+        margin-top: 8px;
+        flex-shrink: 0;
+      }
+      .plan-cta {
+        margin-top: 4px;
+        justify-content: center;
+        width: 100%;
+      }
+      .plan-status {
+        font-size: 12px;
+        color: var(--text-muted);
+        min-height: 16px;
+        text-align: center;
+      }
+      .plan-status.error { color: #f87171; }
+    </style>
+    <script>
+      (function () {
+        try {
+          if (sessionStorage.getItem('guided.unlocked') === 'true') return;
+        } catch (e) {}
+        document.documentElement.classList.add('is-locked');
+
+        function build() {
+          var overlay = document.createElement('div');
+          overlay.id = 'gate-overlay';
+          overlay.innerHTML =
+            '<form class="gate-card" autocomplete="off">' +
+            '<div class="gate-logo">' +
+            '<span class="gate-mark">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+            '<circle cx="12" cy="12" r="3" />' +
+            '<path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />' +
+            '</svg>' +
+            '</span>' +
+            '<span class="gate-name">Guided</span>' +
+            '</div>' +
+            '<input type="password" name="p" placeholder="Password" autocomplete="off" autofocus />' +
+            '<button type="submit">Enter</button>' +
+            '</form>';
+          document.body.insertBefore(overlay, document.body.firstChild);
+          var card = overlay.querySelector('.gate-card');
+          var form = overlay.querySelector('form');
+          var input = overlay.querySelector('input');
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (input.value === 'gulley_guided2026') {
+              try { sessionStorage.setItem('guided.unlocked', 'true'); } catch (err) {}
+              document.documentElement.classList.remove('is-locked');
+              overlay.remove();
+            } else {
+              card.classList.remove('shake');
+              void card.offsetWidth;
+              card.classList.add('shake');
+              input.value = '';
+              input.focus();
+            }
+          });
+          setTimeout(function () { input.focus(); }, 0);
+        }
+
+        if (document.body) build();
+        else document.addEventListener('DOMContentLoaded', build, { once: true });
+      })();
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <a href="index.html" class="brand" aria-label="Guided home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
+            </svg>
+          </span>
+          <span class="brand-name">Guided</span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="directory.html">Directory</a>
+          <a href="pricing.html">Pricing</a>
+          <a href="account.html">Account</a>
+          <a href="index.html#download" class="nav-cta">Download</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <div class="container">
+          <header class="section-head" style="text-align: center; margin-left: auto; margin-right: auto;">
+            <span class="section-eyebrow">Pricing</span>
+            <h1 class="section-title">Pick a plan that fits.</h1>
+            <p class="section-lede" style="margin-left: auto; margin-right: auto;">
+              Cancel anytime. Yearly saves you a few months.
+            </p>
+          </header>
+
+          <div class="pricing-grid">
+            <article class="plan-card" data-plan="monthly">
+              <div class="plan-name">Monthly</div>
+              <div class="plan-price">
+                <span class="amount">$12</span>
+                <span class="period">/month</span>
+              </div>
+              <p class="plan-tagline">Cancel anytime.</p>
+              <ul class="plan-features">
+                <li>Full access to Guided</li>
+                <li>API access included</li>
+                <li>Always-up-to-date model</li>
+              </ul>
+              <button class="btn btn-secondary plan-cta" data-checkout="monthly" type="button">
+                Get Started
+              </button>
+              <p class="plan-status" data-status-for="monthly"></p>
+            </article>
+
+            <article class="plan-card featured" data-plan="yearly">
+              <span class="plan-badge">Best Value</span>
+              <div class="plan-name">Yearly</div>
+              <div class="plan-price">
+                <span class="amount">$99</span>
+                <span class="period">/year</span>
+              </div>
+              <p class="plan-tagline">Save 31% — about $8.25/month.</p>
+              <ul class="plan-features">
+                <li>Everything in Monthly</li>
+                <li>Two months free</li>
+                <li>Priority email support</li>
+              </ul>
+              <button class="btn btn-primary plan-cta" data-checkout="yearly" type="button">
+                Get Started
+              </button>
+              <p class="plan-status" data-status-for="yearly"></p>
+            </article>
+          </div>
+
+          <p style="text-align: center; margin-top: 32px; color: var(--text-muted); font-size: 13px;">
+            Already subscribed? <a href="account.html" style="color: var(--accent);">Manage your account</a>.
+          </p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-left">
+          <a href="index.html" class="brand" aria-label="Guided home">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
+              </svg>
+            </span>
+            <span class="brand-name">Guided</span>
+          </a>
+          <span class="footer-copy">© 2026 Guided. All rights reserved. · <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a></span>
+        </div>
+        <nav class="footer-nav" aria-label="Footer">
+          <a href="directory.html">Directory</a>
+          <a href="pricing.html">Pricing</a>
+          <a href="account.html">Account</a>
+          <a href="mailto:hello@guided.build">Contact</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+            data-clerk-publishable-key="pk_test_cHJvcGVyLWJhdC00LmNsZXJrLmFjY291bnRzLmRldiQ"></script>
+    <script>
+      (function () {
+        var BACKEND_URL = 'https://guided-app-production.up.railway.app';
+        var CLERK_KEY = 'pk_test_cHJvcGVyLWJhdC00LmNsZXJrLmFjY291bnRzLmRldiQ';
+
+        var clerk = null;
+
+        function setStatus(plan, message, isError) {
+          var el = document.querySelector('[data-status-for="' + plan + '"]');
+          if (!el) return;
+          el.textContent = message || '';
+          el.classList.toggle('error', !!isError);
+        }
+
+        async function ensureClerk() {
+          if (clerk) return clerk;
+          if (typeof window.Clerk === 'undefined') {
+            // Wait for the Clerk script to load.
+            await new Promise(function (resolve) {
+              var attempts = 0;
+              var t = setInterval(function () {
+                attempts += 1;
+                if (typeof window.Clerk !== 'undefined' || attempts > 50) {
+                  clearInterval(t);
+                  resolve();
+                }
+              }, 100);
+            });
+          }
+          if (typeof window.Clerk === 'undefined') {
+            throw new Error('Clerk failed to load.');
+          }
+          clerk = new window.Clerk(CLERK_KEY);
+          await clerk.load();
+          return clerk;
+        }
+
+        async function startCheckout(plan) {
+          setStatus(plan, '', false);
+          try {
+            var c = await ensureClerk();
+            if (!c.user) {
+              window.location.href = 'signin.html?redirect=pricing&plan=' + encodeURIComponent(plan);
+              return;
+            }
+            setStatus(plan, 'Starting checkout…', false);
+            var token = await c.session.getToken();
+            var res = await fetch(BACKEND_URL + '/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: token, plan: plan }),
+            });
+            var data = await res.json();
+            if (!res.ok || !data.url) {
+              throw new Error(data.error || 'Could not start checkout.');
+            }
+            window.location.href = data.url;
+          } catch (err) {
+            setStatus(plan, err.message || 'Could not start checkout.', true);
+          }
+        }
+
+        document.querySelectorAll('[data-checkout]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var plan = btn.getAttribute('data-checkout');
+            startCheckout(plan);
+          });
+        });
+
+        // Auto-resume checkout if redirected back from sign-in with a plan in the query.
+        try {
+          var params = new URLSearchParams(window.location.search);
+          var resumePlan = params.get('plan');
+          if (resumePlan === 'monthly' || resumePlan === 'yearly') {
+            ensureClerk().then(function (c) {
+              if (c.user) startCheckout(resumePlan);
+            });
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </body>
+</html>

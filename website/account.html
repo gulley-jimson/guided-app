@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Account — Guided</title>
+    <meta name="description" content="Manage your Guided subscription and billing." />
+    <meta name="theme-color" content="#0b0d10" />
+    <style>
+      html.is-locked body > *:not(#gate-overlay) { display: none !important; }
+      #gate-overlay {
+        position: fixed; inset: 0; z-index: 999999;
+        background: #0f0f13;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        color: #e6e8eb;
+      }
+      #gate-overlay .gate-card {
+        width: 100%; max-width: 360px;
+        padding: 32px;
+        background: #15181d;
+        border: 1px solid #23272e;
+        border-radius: 14px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+      }
+      #gate-overlay .gate-logo {
+        display: flex; align-items: center; justify-content: center;
+        gap: 10px; margin-bottom: 24px;
+      }
+      #gate-overlay .gate-mark {
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #a78bfa, #6366f1);
+        display: grid; place-items: center;
+        box-shadow: 0 6px 20px rgba(167, 139, 250, 0.35);
+      }
+      #gate-overlay .gate-mark svg { width: 20px; height: 20px; color: #fff; }
+      #gate-overlay .gate-name {
+        font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+      }
+      #gate-overlay input {
+        width: 100%; box-sizing: border-box;
+        padding: 12px 14px;
+        background: #0b0d10;
+        border: 1px solid #2f3441;
+        border-radius: 8px;
+        color: #e6e8eb;
+        font-size: 14px; outline: none;
+        margin-bottom: 12px;
+      }
+      #gate-overlay input:focus { border-color: #a78bfa; }
+      #gate-overlay button {
+        width: 100%; padding: 12px;
+        background: #a78bfa; color: #0b0d10;
+        border: none; border-radius: 8px;
+        font-size: 14px; font-weight: 600; cursor: pointer;
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      #gate-overlay button:hover { background: #8b5cf6; color: #fff; }
+      @keyframes gateShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-8px); }
+        40%, 80% { transform: translateX(8px); }
+      }
+      #gate-overlay .gate-card.shake {
+        animation: gateShake 0.4s ease-in-out;
+        border-color: #f87171;
+      }
+
+      .account-shell {
+        max-width: 560px;
+        margin: 0 auto;
+      }
+      .account-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 28px;
+        margin-bottom: 16px;
+      }
+      .account-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .account-row:last-child { border-bottom: none; }
+      .account-row .label {
+        color: var(--text-muted);
+        font-size: 13px;
+      }
+      .account-row .value {
+        color: var(--text);
+        font-size: 14px;
+        font-weight: 500;
+        text-align: right;
+        word-break: break-word;
+      }
+      .account-status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        border-radius: 999px;
+        text-transform: capitalize;
+      }
+      .account-status-pill.active {
+        background: rgba(74, 222, 128, 0.12);
+        color: #4ade80;
+      }
+      .account-status-pill.inactive {
+        background: rgba(167, 139, 250, 0.12);
+        color: var(--accent);
+      }
+      .account-actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .account-loading,
+      .account-error {
+        text-align: center;
+        color: var(--text-muted);
+        font-size: 14px;
+        padding: 32px;
+      }
+      .account-error { color: #f87171; }
+      .account-empty-cta {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 16px 0;
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          if (sessionStorage.getItem('guided.unlocked') === 'true') return;
+        } catch (e) {}
+        document.documentElement.classList.add('is-locked');
+
+        function build() {
+          var overlay = document.createElement('div');
+          overlay.id = 'gate-overlay';
+          overlay.innerHTML =
+            '<form class="gate-card" autocomplete="off">' +
+            '<div class="gate-logo">' +
+            '<span class="gate-mark">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+            '<circle cx="12" cy="12" r="3" />' +
+            '<path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />' +
+            '</svg>' +
+            '</span>' +
+            '<span class="gate-name">Guided</span>' +
+            '</div>' +
+            '<input type="password" name="p" placeholder="Password" autocomplete="off" autofocus />' +
+            '<button type="submit">Enter</button>' +
+            '</form>';
+          document.body.insertBefore(overlay, document.body.firstChild);
+          var card = overlay.querySelector('.gate-card');
+          var form = overlay.querySelector('form');
+          var input = overlay.querySelector('input');
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (input.value === 'gulley_guided2026') {
+              try { sessionStorage.setItem('guided.unlocked', 'true'); } catch (err) {}
+              document.documentElement.classList.remove('is-locked');
+              overlay.remove();
+            } else {
+              card.classList.remove('shake');
+              void card.offsetWidth;
+              card.classList.add('shake');
+              input.value = '';
+              input.focus();
+            }
+          });
+          setTimeout(function () { input.focus(); }, 0);
+        }
+
+        if (document.body) build();
+        else document.addEventListener('DOMContentLoaded', build, { once: true });
+      })();
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <a href="index.html" class="brand" aria-label="Guided home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
+            </svg>
+          </span>
+          <span class="brand-name">Guided</span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="directory.html">Directory</a>
+          <a href="pricing.html">Pricing</a>
+          <a href="account.html">Account</a>
+          <a href="index.html#download" class="nav-cta">Download</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <div class="container">
+          <header class="section-head" style="text-align: center; margin-left: auto; margin-right: auto;">
+            <span class="section-eyebrow">Account</span>
+            <h1 class="section-title">Your Guided account</h1>
+          </header>
+
+          <div class="account-shell">
+            <div id="account-content">
+              <div class="account-loading">Loading your account…</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-left">
+          <a href="index.html" class="brand" aria-label="Guided home">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
+              </svg>
+            </span>
+            <span class="brand-name">Guided</span>
+          </a>
+          <span class="footer-copy">© 2026 Guided. All rights reserved. · <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a></span>
+        </div>
+        <nav class="footer-nav" aria-label="Footer">
+          <a href="directory.html">Directory</a>
+          <a href="pricing.html">Pricing</a>
+          <a href="account.html">Account</a>
+          <a href="mailto:hello@guided.build">Contact</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+            data-clerk-publishable-key="pk_test_cHJvcGVyLWJhdC00LmNsZXJrLmFjY291bnRzLmRldiQ"></script>
+    <script>
+      (function () {
+        var BACKEND_URL = 'https://guided-app-production.up.railway.app';
+        var CLERK_KEY = 'pk_test_cHJvcGVyLWJhdC00LmNsZXJrLmFjY291bnRzLmRldiQ';
+
+        var content = document.getElementById('account-content');
+
+        function escapeHtml(s) {
+          return String(s == null ? '' : s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+        }
+
+        function formatPlan(plan) {
+          if (!plan) return '—';
+          return plan.charAt(0).toUpperCase() + plan.slice(1);
+        }
+
+        function formatDate(ms) {
+          if (!ms) return null;
+          try {
+            return new Date(Number(ms)).toLocaleDateString(undefined, {
+              year: 'numeric', month: 'long', day: 'numeric',
+            });
+          } catch (e) { return null; }
+        }
+
+        async function ensureClerk() {
+          if (typeof window.Clerk === 'undefined') {
+            await new Promise(function (resolve) {
+              var attempts = 0;
+              var t = setInterval(function () {
+                attempts += 1;
+                if (typeof window.Clerk !== 'undefined' || attempts > 50) {
+                  clearInterval(t);
+                  resolve();
+                }
+              }, 100);
+            });
+          }
+          if (typeof window.Clerk === 'undefined') {
+            throw new Error('Clerk failed to load.');
+          }
+          var c = new window.Clerk(CLERK_KEY);
+          await c.load();
+          return c;
+        }
+
+        async function fetchSubscription(userId) {
+          var res = await fetch(BACKEND_URL + '/subscription/' + encodeURIComponent(userId));
+          if (!res.ok) throw new Error('Could not load subscription.');
+          return res.json();
+        }
+
+        async function openPortal(clerk) {
+          var btn = document.getElementById('manage-billing');
+          var status = document.getElementById('account-status-msg');
+          if (btn) btn.disabled = true;
+          if (status) { status.textContent = 'Opening billing portal…'; status.style.color = ''; }
+          try {
+            var token = await clerk.session.getToken();
+            var res = await fetch(BACKEND_URL + '/portal', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token: token, returnUrl: window.location.href }),
+            });
+            var data = await res.json();
+            if (!res.ok || !data.url) {
+              throw new Error(data.error || 'Could not open billing portal.');
+            }
+            window.location.href = data.url;
+          } catch (err) {
+            if (status) { status.textContent = err.message; status.style.color = '#f87171'; }
+            if (btn) btn.disabled = false;
+          }
+        }
+
+        async function signOut(clerk) {
+          try { await clerk.signOut(); } catch (e) {}
+          window.location.href = 'index.html';
+        }
+
+        function renderSubscribed(clerk, sub) {
+          var email = clerk.user && clerk.user.primaryEmailAddress
+            ? clerk.user.primaryEmailAddress.emailAddress
+            : '—';
+          var statusClass = sub.active ? 'active' : 'inactive';
+          var statusLabel = sub.status || (sub.active ? 'active' : 'inactive');
+          var nextBilling = formatDate(sub.currentPeriodEnd);
+
+          content.innerHTML =
+            '<div class="account-card">' +
+              '<div class="account-row">' +
+                '<span class="label">Email</span>' +
+                '<span class="value">' + escapeHtml(email) + '</span>' +
+              '</div>' +
+              '<div class="account-row">' +
+                '<span class="label">Status</span>' +
+                '<span class="value"><span class="account-status-pill ' + statusClass + '">' + escapeHtml(statusLabel) + '</span></span>' +
+              '</div>' +
+              '<div class="account-row">' +
+                '<span class="label">Plan</span>' +
+                '<span class="value">' + escapeHtml(formatPlan(sub.plan)) + '</span>' +
+              '</div>' +
+              (nextBilling ? (
+                '<div class="account-row">' +
+                  '<span class="label">' + (sub.status === 'canceled' ? 'Access until' : 'Next billing') + '</span>' +
+                  '<span class="value">' + escapeHtml(nextBilling) + '</span>' +
+                '</div>'
+              ) : '') +
+            '</div>' +
+            '<div class="account-card">' +
+              '<div class="account-actions">' +
+                '<button id="manage-billing" type="button" class="btn btn-primary">Manage billing</button>' +
+                '<button id="sign-out" type="button" class="btn btn-secondary">Sign out</button>' +
+              '</div>' +
+              '<p id="account-status-msg" style="margin-top: 12px; color: var(--text-muted); font-size: 13px;"></p>' +
+            '</div>';
+
+          document.getElementById('manage-billing').addEventListener('click', function () { openPortal(clerk); });
+          document.getElementById('sign-out').addEventListener('click', function () { signOut(clerk); });
+        }
+
+        function renderUnsubscribed(clerk) {
+          var email = clerk.user && clerk.user.primaryEmailAddress
+            ? clerk.user.primaryEmailAddress.emailAddress
+            : '—';
+          content.innerHTML =
+            '<div class="account-card">' +
+              '<div class="account-row">' +
+                '<span class="label">Email</span>' +
+                '<span class="value">' + escapeHtml(email) + '</span>' +
+              '</div>' +
+              '<div class="account-row">' +
+                '<span class="label">Subscription</span>' +
+                '<span class="value"><span class="account-status-pill inactive">No active plan</span></span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="account-card">' +
+              '<div class="account-empty-cta">' +
+                '<p style="color: var(--text-muted); font-size: 14px; text-align: center; margin: 0;">' +
+                  'Subscribe to unlock Guided.' +
+                '</p>' +
+                '<a href="pricing.html" class="btn btn-primary">View pricing</a>' +
+                '<button id="sign-out" type="button" class="btn btn-ghost">Sign out</button>' +
+              '</div>' +
+            '</div>';
+
+          document.getElementById('sign-out').addEventListener('click', function () { signOut(clerk); });
+        }
+
+        function renderError(message) {
+          content.innerHTML = '<div class="account-error">' + escapeHtml(message) + '</div>';
+        }
+
+        (async function init() {
+          try {
+            var clerk = await ensureClerk();
+            if (!clerk.user) {
+              window.location.href = 'signin.html?redirect=account';
+              return;
+            }
+            var sub;
+            try {
+              sub = await fetchSubscription(clerk.user.id);
+            } catch (err) {
+              renderError(err.message || 'Could not load subscription.');
+              return;
+            }
+            if (sub && sub.active) {
+              renderSubscribed(clerk, sub);
+            } else {
+              renderUnsubscribed(clerk);
+            }
+          } catch (err) {
+            renderError(err.message || 'Something went wrong.');
+          }
+        })();
+      })();
+    </script>
+  </body>
+</html>

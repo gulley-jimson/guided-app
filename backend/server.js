@@ -16,10 +16,14 @@ const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SEC
 
 const fastify = Fastify({ logger: true });
 
+// Allow guided.build, localhost, and the Electron app (which sends Origin: null
+// when loading from file://). During development we reflect any origin so the
+// dev server, packaged app, and website all work.
 fastify.register(cors, {
-  origin: true,
+  origin: (origin, cb) => cb(null, true),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
 });
 
 // Replace the JSON parser so we keep the raw body — Stripe needs it for signature verification.
@@ -225,6 +229,25 @@ fastify.post('/webhook', async (req, reply) => {
   return { received: true };
 });
 
+fastify.post('/portal', async (req, reply) => {
+  if (!stripe) return reply.code(500).send({ error: 'Stripe not configured' });
+  try {
+    const userId = await verifyClerkToken(req.body?.token);
+    const sub = db.getSubscription(userId);
+    if (!sub?.stripeCustomerId) {
+      return reply.code(404).send({ error: 'No customer record found' });
+    }
+    const session = await stripe.billingPortal.sessions.create({
+      customer: sub.stripeCustomerId,
+      return_url: req.body?.returnUrl ?? 'https://guided.build',
+    });
+    return { url: session.url };
+  } catch (err) {
+    fastify.log.error({ err }, 'portal error');
+    return reply.code(err.statusCode ?? 400).send({ error: err.message });
+  }
+});
+
 fastify.get('/subscription/:clerkUserId', async (req) => {
   const { clerkUserId } = req.params;
   const sub = db.getSubscription(clerkUserId);
@@ -261,11 +284,17 @@ fastify.post('/chat', async (req, reply) => {
   }
 
   reply.hijack();
+  // hijack() bypasses fastify-cors' onSend hook, so we have to write the CORS
+  // headers ourselves before the streamed response starts.
+  const requestOrigin = req.headers.origin;
   reply.raw.writeHead(200, {
     'Content-Type': 'text/event-stream',
     'Cache-Control': 'no-cache, no-transform',
     Connection: 'keep-alive',
     'X-Accel-Buffering': 'no',
+    'Access-Control-Allow-Origin': requestOrigin || '*',
+    'Access-Control-Allow-Credentials': 'true',
+    Vary: 'Origin',
   });
   reply.raw.flushHeaders?.();
 

@@ -13,6 +13,9 @@ try {
 const isDev = !app.isPackaged;
 const WIN_WIDTH = 380;
 const WIN_HEIGHT = 600;
+const WIN_MIN_WIDTH = 320;
+const WIN_MIN_HEIGHT = 400;
+const WIN_MAX_WIDTH = 800;
 const EDGE_MARGIN = 20;
 
 let win = null;
@@ -24,19 +27,22 @@ let lastActiveApp = null;
 let positionSaveTimer = null;
 
 function createWindow() {
-  const { x, y } = resolveInitialPosition();
+  const { x, y, width, height } = resolveInitialState();
 
   win = new BrowserWindow({
-    width: WIN_WIDTH,
-    height: WIN_HEIGHT,
+    width,
+    height,
     x,
     y,
+    minWidth: WIN_MIN_WIDTH,
+    minHeight: WIN_MIN_HEIGHT,
+    maxWidth: WIN_MAX_WIDTH,
     frame: false,
     transparent: false,
-    resizable: false,
+    resizable: true,
     alwaysOnTop: true,
     skipTaskbar: false,
-    backgroundColor: '#0b0d10',
+    backgroundColor: '#0f0f13',
     title: 'Guided',
     icon: path.join(__dirname, 'icons', 'icon.png'),
     webPreferences: {
@@ -56,10 +62,12 @@ function createWindow() {
     }
   });
 
-  win.on('move', () => {
+  function scheduleStateSave() {
     if (positionSaveTimer) clearTimeout(positionSaveTimer);
-    positionSaveTimer = setTimeout(saveWindowPosition, 500);
-  });
+    positionSaveTimer = setTimeout(saveWindowState, 500);
+  }
+  win.on('move', scheduleStateSave);
+  win.on('resize', scheduleStateSave);
 
   if (isDev) {
     win.loadURL('http://localhost:5173');
@@ -68,48 +76,78 @@ function createWindow() {
   }
 }
 
-function defaultWindowPosition() {
+function clampWidth(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return WIN_WIDTH;
+  return Math.min(Math.max(Math.round(value), WIN_MIN_WIDTH), WIN_MAX_WIDTH);
+}
+
+function clampHeight(value) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return WIN_HEIGHT;
+  return Math.max(Math.round(value), WIN_MIN_HEIGHT);
+}
+
+function defaultWindowState() {
   const { workArea } = screen.getPrimaryDisplay();
   return {
     x: workArea.x + workArea.width - WIN_WIDTH - EDGE_MARGIN,
     y: workArea.y + Math.round((workArea.height - WIN_HEIGHT) / 2),
+    width: WIN_WIDTH,
+    height: WIN_HEIGHT,
   };
 }
 
-function resolveInitialPosition() {
-  const saved = loadWindowPosition();
-  if (saved && isPositionVisible(saved.x, saved.y, WIN_WIDTH, WIN_HEIGHT)) {
-    return saved;
+function resolveInitialState() {
+  const saved = loadWindowState();
+  const dflt = defaultWindowState();
+
+  const width = clampWidth(saved?.width ?? dflt.width);
+  const height = clampHeight(saved?.height ?? dflt.height);
+
+  let x = dflt.x;
+  let y = dflt.y;
+  if (
+    saved &&
+    typeof saved.x === 'number' &&
+    typeof saved.y === 'number' &&
+    isPositionVisible(saved.x, saved.y, width, height)
+  ) {
+    x = saved.x;
+    y = saved.y;
+  } else if (width !== dflt.width) {
+    // If we picked up a saved size but no usable saved position, shift x so the
+    // window still hugs the right edge for its new width.
+    const { workArea } = screen.getPrimaryDisplay();
+    x = workArea.x + workArea.width - width - EDGE_MARGIN;
   }
-  return defaultWindowPosition();
+
+  return { x, y, width, height };
 }
 
 function positionFilePath() {
   return path.join(app.getPath('userData'), 'window-position.json');
 }
 
-function loadWindowPosition() {
+function loadWindowState() {
   try {
     const raw = fs.readFileSync(positionFilePath(), 'utf8');
     const parsed = JSON.parse(raw);
-    if (
-      parsed &&
-      typeof parsed.x === 'number' &&
-      typeof parsed.y === 'number' &&
-      Number.isFinite(parsed.x) &&
-      Number.isFinite(parsed.y)
-    ) {
-      return { x: parsed.x, y: parsed.y };
-    }
+    if (!parsed || typeof parsed !== 'object') return null;
+    const out = {};
+    if (typeof parsed.x === 'number' && Number.isFinite(parsed.x)) out.x = parsed.x;
+    if (typeof parsed.y === 'number' && Number.isFinite(parsed.y)) out.y = parsed.y;
+    if (typeof parsed.width === 'number' && Number.isFinite(parsed.width)) out.width = parsed.width;
+    if (typeof parsed.height === 'number' && Number.isFinite(parsed.height)) out.height = parsed.height;
+    return Object.keys(out).length > 0 ? out : null;
   } catch {}
   return null;
 }
 
-function saveWindowPosition() {
+function saveWindowState() {
   if (!win || win.isDestroyed()) return;
   try {
     const [x, y] = win.getPosition();
-    fs.writeFileSync(positionFilePath(), JSON.stringify({ x, y }), 'utf8');
+    const [width, height] = win.getSize();
+    fs.writeFileSync(positionFilePath(), JSON.stringify({ x, y, width, height }), 'utf8');
   } catch {}
 }
 

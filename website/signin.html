@@ -3,11 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Privacy Policy — Guided</title>
-    <meta
-      name="description"
-      content="What Guided collects, what we don't, how we use it, and the third-party services involved."
-    />
+    <title>Sign in — Guided</title>
+    <meta name="description" content="Sign in to your Guided account." />
     <meta name="theme-color" content="#0b0d10" />
     <style>
       html.is-locked body > *:not(#gate-overlay) { display: none !important; }
@@ -69,6 +66,23 @@
       #gate-overlay .gate-card.shake {
         animation: gateShake 0.4s ease-in-out;
         border-color: #f87171;
+      }
+
+      .signin-shell {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        padding: 32px 0;
+      }
+      #clerk-mount {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+      }
+      .signin-fallback {
+        color: var(--text-muted);
+        text-align: center;
       }
     </style>
     <script>
@@ -146,83 +160,18 @@
     <main>
       <section>
         <div class="container">
-          <header class="section-head">
-            <span class="section-eyebrow">Legal</span>
-            <h1 class="section-title">Privacy Policy</h1>
-            <p class="section-lede">Last updated May 2026.</p>
+          <header class="section-head" style="text-align: center; margin-left: auto; margin-right: auto;">
+            <span class="section-eyebrow">Account</span>
+            <h1 class="section-title">Sign in to Guided</h1>
+            <p class="section-lede" style="margin-left: auto; margin-right: auto;">
+              Welcome back. Sign in to manage your subscription.
+            </p>
           </header>
 
-          <div class="legal-content">
-            <h2>Information we collect</h2>
-            <p>
-              When you create an account, we collect your <strong>name and email</strong>
-              through <a href="https://clerk.com" target="_blank" rel="noopener">Clerk</a>,
-              our authentication provider.
-            </p>
-            <p>
-              <strong>Payment information</strong> is processed by
-              <a href="https://stripe.com" target="_blank" rel="noopener">Stripe</a>.
-              We never see or store your card details ourselves.
-            </p>
-            <p>
-              While the app is running, Guided detects which
-              <strong>software application is currently active on your screen</strong>
-              so it can teach the right tool. This is processed locally on your device,
-              and the application name is sent to the Anthropic Claude API as part of
-              your request context.
-            </p>
-            <p>
-              <strong>Chat messages</strong> you send through the app are transmitted
-              to the Claude API to generate responses.
-            </p>
-
-            <h2>Information we do NOT collect</h2>
-            <p>We do not use:</p>
-            <ul>
-              <li>Advertising trackers</li>
-              <li>Facebook Pixel</li>
-              <li>Google Analytics</li>
-              <li>Browsing history</li>
-            </ul>
-
-            <h2>How we use your information</h2>
-            <p>We use the information we collect to:</p>
-            <ul>
-              <li>Provide and operate the Guided service</li>
-              <li>Process subscription payments</li>
-              <li>Send transactional, account-related emails</li>
-            </ul>
-
-            <h2>Third-party services</h2>
-            <p>Guided relies on the following third-party services:</p>
-            <ul>
-              <li><a href="https://clerk.com" target="_blank" rel="noopener">Clerk</a> — authentication</li>
-              <li><a href="https://stripe.com" target="_blank" rel="noopener">Stripe</a> — payment processing</li>
-              <li>Vercel — website hosting</li>
-              <li>Anthropic Claude API — AI responses</li>
-            </ul>
-
-            <h2>Data storage</h2>
-            <p>
-              Your chat history and project data are stored
-              <strong>locally on your device</strong>, not on our servers.
-            </p>
-
-            <h2>Your rights</h2>
-            <p>
-              You may request access to, correction of, or deletion of your personal
-              data by emailing
-              <a href="mailto:support@guided.build">support@guided.build</a>.
-            </p>
-
-            <h2>Contact</h2>
-            <p>
-              Questions about this policy? Email
-              <a href="mailto:support@guided.build">support@guided.build</a>.
-            </p>
-
-            <h2>Governing law</h2>
-            <p>This policy is governed by the laws of the United States.</p>
+          <div class="signin-shell">
+            <div id="clerk-mount">
+              <p class="signin-fallback">Loading sign-in…</p>
+            </div>
           </div>
         </div>
       </section>
@@ -244,12 +193,85 @@
         </div>
         <nav class="footer-nav" aria-label="Footer">
           <a href="directory.html">Directory</a>
-          <a href="index.html#signup">Early access</a>
+          <a href="pricing.html">Pricing</a>
+          <a href="account.html">Account</a>
           <a href="mailto:hello@guided.build">Contact</a>
         </nav>
       </div>
     </footer>
 
-    <script src="script.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
+            data-clerk-publishable-key="pk_test_cHJvcGVyLWJhdC00LmNsZXJrLmFjY291bnRzLmRldiQ"></script>
+    <script>
+      (function () {
+        var CLERK_KEY = 'pk_test_cHJvcGVyLWJhdC00LmNsZXJrLmFjY291bnRzLmRldiQ';
+
+        function getRedirectUrl() {
+          try {
+            var params = new URLSearchParams(window.location.search);
+            var dest = params.get('redirect') || 'account';
+            var plan = params.get('plan');
+            if (dest === 'pricing') {
+              return 'pricing.html' + (plan ? '?plan=' + encodeURIComponent(plan) : '');
+            }
+            if (dest === 'index' || dest === 'home') return 'index.html';
+            return 'account.html';
+          } catch (e) {
+            return 'account.html';
+          }
+        }
+
+        async function ensureClerk() {
+          if (typeof window.Clerk === 'undefined') {
+            await new Promise(function (resolve) {
+              var attempts = 0;
+              var t = setInterval(function () {
+                attempts += 1;
+                if (typeof window.Clerk !== 'undefined' || attempts > 50) {
+                  clearInterval(t);
+                  resolve();
+                }
+              }, 100);
+            });
+          }
+          if (typeof window.Clerk === 'undefined') {
+            throw new Error('Clerk failed to load.');
+          }
+          var c = new window.Clerk(CLERK_KEY);
+          await c.load();
+          return c;
+        }
+
+        (async function init() {
+          var mount = document.getElementById('clerk-mount');
+          var redirectUrl = getRedirectUrl();
+          try {
+            var clerk = await ensureClerk();
+
+            if (clerk.user) {
+              window.location.href = redirectUrl;
+              return;
+            }
+
+            mount.innerHTML = '';
+            clerk.mountSignIn(mount, {
+              afterSignInUrl: redirectUrl,
+              afterSignUpUrl: redirectUrl,
+              redirectUrl: redirectUrl,
+            });
+
+            // Watch the session — once signed in, redirect.
+            clerk.addListener(function (resources) {
+              if (resources && resources.user) {
+                window.location.href = redirectUrl;
+              }
+            });
+          } catch (err) {
+            mount.innerHTML = '<p class="signin-fallback" style="color: #f87171;">' +
+              (err.message || 'Could not load sign-in.') + '</p>';
+          }
+        })();
+      })();
+    </script>
   </body>
 </html>
