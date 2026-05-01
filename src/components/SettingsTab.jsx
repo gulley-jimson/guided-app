@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const SIGNIN_URL = 'https://guided.build/signin.html?source=app';
 const PRICING_URL = 'https://guided.build/pricing.html';
@@ -26,6 +26,11 @@ export default function SettingsTab({
 
   const [waitingForBrowserAuth, setWaitingForBrowserAuth] = useState(false);
   const [signOutBusy, setSignOutBusy] = useState(false);
+
+  // 'idle' | 'checking' | 'up-to-date' | 'downloading' | 'downloaded' | 'error'
+  const [updateStatus, setUpdateStatus] = useState('idle');
+  const [appVersion, setAppVersion] = useState('');
+  const upToDateTimerRef = useRef(null);
 
   useEffect(() => {
     setDraft(apiKey);
@@ -56,6 +61,58 @@ export default function SettingsTab({
   useEffect(() => {
     if (deepLinkError && waitingForBrowserAuth) setWaitingForBrowserAuth(false);
   }, [deepLinkError, waitingForBrowserAuth]);
+
+  // Auto-updater hooks — flip status as the main process reports progress.
+  useEffect(() => {
+    const offAvail = window.guided?.onUpdateAvailable?.(() => {
+      if (upToDateTimerRef.current) {
+        clearTimeout(upToDateTimerRef.current);
+        upToDateTimerRef.current = null;
+      }
+      setUpdateStatus('downloading');
+    });
+    const offDone = window.guided?.onUpdateDownloaded?.(() => {
+      setUpdateStatus('downloaded');
+    });
+    return () => {
+      try { offAvail?.(); } catch {}
+      try { offDone?.(); } catch {}
+    };
+  }, []);
+
+  useEffect(() => () => {
+    if (upToDateTimerRef.current) clearTimeout(upToDateTimerRef.current);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (window.guided?.getVersion) {
+      window.guided.getVersion().then((v) => {
+        if (!cancelled && typeof v === 'string') setAppVersion(v);
+      }).catch(() => {});
+    }
+    return () => { cancelled = true; };
+  }, []);
+
+  async function checkForUpdates() {
+    if (!window.guided?.checkForUpdates) {
+      setUpdateStatus('error');
+      return;
+    }
+    setUpdateStatus('checking');
+    try {
+      await window.guided.checkForUpdates();
+    } catch {
+      setUpdateStatus('error');
+      return;
+    }
+    // electron-updater fires update-available within a couple seconds when there
+    // is one. If we don't hear anything, treat that as up-to-date.
+    if (upToDateTimerRef.current) clearTimeout(upToDateTimerRef.current);
+    upToDateTimerRef.current = setTimeout(() => {
+      setUpdateStatus((current) => (current === 'checking' ? 'up-to-date' : current));
+    }, 4000);
+  }
 
   async function changeProjectsBase() {
     if (!window.guided?.chooseProjectsBase) return;
@@ -289,8 +346,43 @@ export default function SettingsTab({
           anywhere to show or hide Guided.
         </p>
       </Section>
+
+      <Section title="Updates">
+        <div className="flex items-center justify-between gap-3">
+          <span className="text-xs text-panel-text">
+            {appVersion ? `Guided v${appVersion}` : 'Guided'}
+          </span>
+          <button
+            onClick={checkForUpdates}
+            disabled={updateStatus === 'checking' || updateStatus === 'downloading'}
+            className="rounded-md border border-panel-border bg-panel-bg px-2.5 py-1 text-xs text-panel-text transition-colors hover:border-panel-accent/60 disabled:opacity-50"
+          >
+            Check for updates
+          </button>
+        </div>
+        <p className="mt-2 text-[11px] leading-snug text-panel-muted">
+          {updateStatusMessage(updateStatus)}
+        </p>
+      </Section>
     </div>
   );
+}
+
+function updateStatusMessage(status) {
+  switch (status) {
+    case 'checking':
+      return 'Checking…';
+    case 'downloading':
+      return 'Update available — downloading…';
+    case 'downloaded':
+      return 'Update downloaded — restart Guided to install.';
+    case 'up-to-date':
+      return "You're up to date!";
+    case 'error':
+      return 'Could not check for updates.';
+    default:
+      return 'Guided will install updates automatically when you restart.';
+  }
 }
 
 function capitalize(s) {

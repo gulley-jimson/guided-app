@@ -89,7 +89,15 @@ export default function App() {
 
   const apiKey = storedKey || ENV_API_KEY;
   const usingSubscription = auth.isSignedIn && subscriptionActive;
-  const onboardingComplete = Boolean(apiKey) || usingSubscription;
+  // Onboarding dismisses as soon as the user has either a key or a Guided
+  // account — the deep-link callback marks them signed-in, so the welcome
+  // screen disappears even before subscription verification completes.
+  const isSetup = Boolean(apiKey) || auth.isSignedIn;
+  const [, setOnboardingDismissed] = useLocalState('guided.onboardingDismissed', false);
+  useEffect(() => {
+    setOnboardingDismissed(isSetup);
+  }, [isSetup, setOnboardingDismissed]);
+  const onboardingComplete = isSetup;
 
   const activeProject = useMemo(
     () => projects.find((p) => p.id === activeId) ?? null,
@@ -377,22 +385,12 @@ export default function App() {
     setActiveTab('Projects');
   }
 
-  function completeSubscriptionOnboarding({ plan }) {
-    applySubscriptionUpdate({ active: true, plan });
-    setActiveTab('Projects');
-  }
-
   return (
     <div className="flex h-full w-full flex-col bg-panel-bg text-panel-text border border-panel-border rounded-xl overflow-hidden">
       <Header />
       {!onboardingComplete ? (
         <div className="flex-1 min-h-0">
-          <Onboarding
-            onSubmitKey={completeOnboarding}
-            onSubscribeComplete={completeSubscriptionOnboarding}
-            clerk={auth}
-            backendUrl={BACKEND_URL}
-          />
+          <Onboarding onSubmitKey={completeOnboarding} />
         </div>
       ) : (
         <>

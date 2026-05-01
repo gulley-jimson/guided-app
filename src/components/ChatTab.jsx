@@ -94,6 +94,7 @@ export default function ChatTab({
   const searchResultsRef = useRef(onSearchResults);
   const inFlightSearchesRef = useRef(new Set());
   const visionStartedRef = useRef(new Set());
+  const cutoffCheckedRef = useRef(new Set());
 
   const messages = project?.messages ?? [];
 
@@ -184,6 +185,40 @@ export default function ChatTab({
         });
     }
   }, [messages, project?.id]);
+
+  // Crash recovery — if the last message is a still-streaming assistant turn,
+  // the app was killed mid-response. Mark it as errored and append a recovery
+  // prompt so the user can opt to resume.
+  useEffect(() => {
+    if (!project) return;
+    if (cutoffCheckedRef.current.has(project.id)) return;
+    cutoffCheckedRef.current.add(project.id);
+
+    const msgs = project.messages ?? [];
+    const last = msgs[msgs.length - 1];
+    if (!last || last.role !== 'assistant' || !last.streaming) return;
+
+    const cutOffId = last.id;
+    const recoveryId = `a-${Date.now()}-recovery`;
+    onUpdate((p) => ({
+      ...p,
+      messages: [
+        ...p.messages.map((m) =>
+          m.id === cutOffId
+            ? { ...m, streaming: false, error: true, cutOff: true }
+            : m
+        ),
+        {
+          id: recoveryId,
+          role: 'assistant',
+          text: "Looks like we got cut off — want to pick up where we left off?",
+          kind: 'recovery-prompt',
+          recoverTargetId: cutOffId,
+        },
+      ],
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project?.id]);
 
   // Auto-kickoff the Vision Session for new, empty, vision-incomplete projects.
   useEffect(() => {
@@ -525,6 +560,24 @@ export default function ChatTab({
     }
   }
 
+  function continueAfterCutoff(recoveryId, cutOffId) {
+    if (sending) return;
+    // Drop the recovery prompt; retry() will reset the cut-off message and
+    // re-stream from the prior user turn.
+    onUpdate((p) => ({
+      ...p,
+      messages: p.messages.filter((m) => m.id !== recoveryId),
+    }));
+    retry(cutOffId);
+  }
+
+  function dismissRecovery(recoveryId) {
+    onUpdate((p) => ({
+      ...p,
+      messages: p.messages.filter((m) => m.id !== recoveryId),
+    }));
+  }
+
   function onKeyDown(e) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -690,6 +743,33 @@ export default function ChatTab({
                   onRetry={() => retry(m.id)}
                   onOpenSettings={onOpenSettings}
                 />
+              );
+            }
+
+            if (m.kind === 'recovery-prompt') {
+              const showActions = isLast && !sending;
+              return (
+                <div key={m.id}>
+                  <Message role="assistant" text={m.text} />
+                  {showActions && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      <button
+                        onClick={() => continueAfterCutoff(m.id, m.recoverTargetId)}
+                        disabled={sending}
+                        className="no-drag rounded-full border border-panel-accent/60 bg-panel-accent/15 px-2.5 py-1 text-[11px] font-medium text-panel-text transition-colors hover:bg-panel-accent/25 disabled:opacity-40"
+                      >
+                        Yes, let&apos;s continue
+                      </button>
+                      <button
+                        onClick={() => dismissRecovery(m.id)}
+                        disabled={sending}
+                        className="no-drag rounded-full border border-panel-border bg-panel-bg/60 px-2.5 py-1 text-[11px] text-panel-text transition-colors hover:border-panel-accent/60 hover:bg-panel-surface disabled:opacity-40"
+                      >
+                        No thanks, I&apos;ll let you know when I&apos;m ready
+                      </button>
+                    </div>
+                  )}
+                </div>
               );
             }
 

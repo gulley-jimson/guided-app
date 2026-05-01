@@ -70,6 +70,248 @@
         animation: gateShake 0.4s ease-in-out;
         border-color: #f87171;
       }
+
+      /* ---------- Download dropdown ---------- */
+      .dl-dropdown { position: relative; display: inline-block; }
+      .dl-dropdown > summary {
+        list-style: none;
+        cursor: pointer;
+        user-select: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .dl-dropdown > summary::-webkit-details-marker { display: none; }
+      .dl-dropdown > summary::marker { content: ''; }
+      .dl-caret {
+        width: 12px;
+        height: 12px;
+        transition: transform 0.18s ease;
+      }
+      .dl-dropdown[open] .dl-caret { transform: rotate(180deg); }
+      .dl-menu {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 8px);
+        min-width: 240px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 6px;
+        box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+      }
+      .dl-menu a {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 6px;
+        color: var(--text);
+        font-size: 14px;
+        white-space: nowrap;
+        transition: background 0.15s ease;
+      }
+      .dl-menu a:hover { background: var(--bg-elevated, #101319); }
+      .dl-menu .dl-icon { width: 20px; height: 20px; color: var(--text-muted); flex-shrink: 0; }
+      .dl-menu .dl-meta { color: var(--text-muted); font-size: 12px; margin-left: auto; }
+      .dl-hero-row {
+        display: inline-flex;
+        gap: 12px;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: center;
+      }
+
+      /* ---------- Demo panels ---------- */
+      .demo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        max-width: 1100px;
+        margin: 0 auto;
+      }
+      .demo-panel {
+        background: #0f0f13;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 460px;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+      }
+      .demo-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        padding: 10px 14px;
+        background: #15181d;
+        border-bottom: 1px solid var(--border);
+      }
+      .demo-controls { display: flex; gap: 6px; }
+      .demo-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: #2f3441;
+      }
+      .demo-title {
+        font-size: 11px;
+        color: var(--text-muted);
+        letter-spacing: 0.02em;
+      }
+      .demo-tabs {
+        display: flex;
+        padding: 0 8px;
+        background: #0b0d10;
+        border-bottom: 1px solid var(--border);
+      }
+      .demo-tab {
+        padding: 10px 10px;
+        font-size: 11px;
+        color: var(--text-muted);
+        border-bottom: 2px solid transparent;
+        letter-spacing: 0.02em;
+      }
+      .demo-tab.active {
+        color: var(--text);
+        border-bottom-color: var(--accent);
+      }
+      .demo-content {
+        padding: 14px;
+        font-size: 13px;
+        line-height: 1.5;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex: 1;
+        overflow: hidden;
+      }
+      .demo-msg {
+        padding: 9px 12px;
+        border-radius: 10px;
+        max-width: 88%;
+        font-size: 12.5px;
+      }
+      .demo-msg-assistant {
+        background: #15181d;
+        align-self: flex-start;
+      }
+      .demo-msg-user {
+        background: rgba(167, 139, 250, 0.18);
+        border: 1px solid rgba(167, 139, 250, 0.25);
+        align-self: flex-end;
+      }
+      .demo-chips {
+        margin-top: 8px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .demo-chip {
+        font-size: 11px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #0b0d10;
+        border: 1px solid #2f3441;
+        color: var(--text);
+      }
+      .demo-project {
+        padding: 12px;
+        background: #15181d;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      .demo-project.active {
+        border-color: rgba(167, 139, 250, 0.45);
+        background: rgba(167, 139, 250, 0.08);
+      }
+      .demo-project-name { font-weight: 500; font-size: 13px; color: var(--text); }
+      .demo-project-desc { font-size: 11px; color: var(--text-muted); }
+      .demo-project-meta { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+      .demo-newproject {
+        padding: 10px 12px;
+        text-align: center;
+        font-size: 12px;
+        color: var(--text-muted);
+        border: 1px dashed #2f3441;
+        border-radius: 10px;
+      }
+      .demo-phase {
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        font-size: 12.5px;
+        padding: 6px 0;
+      }
+      .demo-phase-marker {
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        border: 1.5px solid #2f3441;
+        flex-shrink: 0;
+        margin-top: 1px;
+        display: grid;
+        place-items: center;
+        font-size: 10px;
+        color: transparent;
+      }
+      .demo-phase.done .demo-phase-marker {
+        background: #4ade80;
+        border-color: #4ade80;
+        color: #0b0d10;
+      }
+      .demo-phase.current .demo-phase-marker {
+        background: var(--accent);
+        border-color: var(--accent);
+      }
+      .demo-phase.current .demo-phase-marker::after {
+        content: '';
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #0b0d10;
+      }
+      .demo-phase-text { color: var(--text-muted); }
+      .demo-phase.done .demo-phase-text { color: var(--text-muted); text-decoration: line-through; }
+      .demo-phase.current .demo-phase-text { color: var(--text); font-weight: 500; }
+      .demo-concept {
+        padding: 10px 12px;
+        background: #15181d;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+      }
+      .demo-concept-title { font-weight: 600; font-size: 13px; margin-bottom: 2px; color: var(--text); }
+      .demo-concept-desc { color: var(--text-muted); font-size: 11.5px; line-height: 1.45; }
+
+      /* ---------- Download cards ---------- */
+      .download-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        max-width: 760px;
+        margin: 32px auto 0;
+      }
+      .download-cards .download-card {
+        margin-top: 0;
+        flex-direction: column;
+        align-items: stretch;
+        text-align: left;
+        gap: 16px;
+      }
+      .download-cards .download-card .platform-icon {
+        width: 28px;
+        height: 28px;
+        color: var(--accent);
+        margin-bottom: 4px;
+      }
     </style>
     <script>
       (function () {
@@ -138,7 +380,30 @@
           <a href="directory.html">Directory</a>
           <a href="pricing.html">Pricing</a>
           <a href="account.html">Account</a>
-          <a href="https://github.com/gulley-jimson/guided-app/releases/latest/download/Guided.Setup.0.1.0.exe" class="nav-cta">Download</a>
+          <details class="dl-dropdown">
+            <summary class="nav-cta">
+              Download
+              <svg class="dl-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </summary>
+            <div class="dl-menu" role="menu">
+              <a href="https://github.com/gulley-jimson/guided-app/releases/latest/download/Guided.Setup.0.1.1.exe" role="menuitem">
+                <svg class="dl-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+                </svg>
+                Windows
+                <span class="dl-meta">0.1.1</span>
+              </a>
+              <a href="https://github.com/gulley-jimson/guided-app/releases/latest/download/Guided-0.1.1.dmg" role="menuitem">
+                <svg class="dl-icon" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                </svg>
+                macOS
+                <span class="dl-meta">0.1.1</span>
+              </a>
+            </div>
+          </details>
         </nav>
       </div>
     </header>
@@ -154,8 +419,31 @@
             Guided is an AI companion that watches your screen and teaches you exactly
             what you need — step by step, in plain English.
           </p>
-          <div class="hero-actions">
-            <a href="https://github.com/gulley-jimson/guided-app/releases/latest/download/Guided.Setup.0.1.0.exe" class="btn btn-primary">Download for Windows</a>
+          <div class="hero-actions dl-hero-row">
+            <details class="dl-dropdown">
+              <summary class="btn btn-primary">
+                Download
+                <svg class="dl-caret" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </summary>
+              <div class="dl-menu" role="menu">
+                <a href="https://github.com/gulley-jimson/guided-app/releases/latest/download/Guided.Setup.0.1.1.exe" role="menuitem">
+                  <svg class="dl-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+                  </svg>
+                  Windows
+                  <span class="dl-meta">0.1.1</span>
+                </a>
+                <a href="https://github.com/gulley-jimson/guided-app/releases/latest/download/Guided-0.1.1.dmg" role="menuitem">
+                  <svg class="dl-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                  </svg>
+                  macOS
+                  <span class="dl-meta">0.1.1</span>
+                </a>
+              </div>
+            </details>
             <a href="directory.html" class="btn btn-secondary">What can I learn?</a>
           </div>
         </div>
@@ -220,6 +508,166 @@
         </div>
       </section>
 
+      <section id="demo">
+        <div class="container">
+          <header class="section-head" style="text-align: center; margin-left: auto; margin-right: auto;">
+            <span class="section-eyebrow">See it in action</span>
+            <h2 class="section-title">A glimpse inside Guided.</h2>
+            <p class="section-lede" style="margin-left: auto; margin-right: auto;">
+              Every project lives in its own panel — your conversation, roadmap, and concepts, side-by-side.
+            </p>
+          </header>
+
+          <div class="demo-grid">
+            <article class="demo-panel" aria-label="Chat tab preview">
+              <div class="demo-header">
+                <div class="demo-controls">
+                  <span class="demo-dot"></span>
+                  <span class="demo-dot"></span>
+                  <span class="demo-dot"></span>
+                </div>
+                <span class="demo-title">Learning Unity for the first time</span>
+              </div>
+              <div class="demo-tabs">
+                <span class="demo-tab active">Chat</span>
+                <span class="demo-tab">Projects</span>
+                <span class="demo-tab">Roadmap</span>
+                <span class="demo-tab">Concepts</span>
+              </div>
+              <div class="demo-content">
+                <div class="demo-msg demo-msg-assistant">
+                  What are you working on? Tell me as much or as little as you like — we'll figure out the rest together.
+                </div>
+                <div class="demo-msg demo-msg-user">
+                  I want to learn Unity and make a small 2D platformer.
+                </div>
+                <div class="demo-msg demo-msg-assistant">
+                  Nice — platformers are great because you'll touch movement, physics, and level design pretty quickly. What's the vibe?
+                  <div class="demo-chips">
+                    <span class="demo-chip">Cute and bouncy</span>
+                    <span class="demo-chip">Dark and moody</span>
+                    <span class="demo-chip">Retro pixel art</span>
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article class="demo-panel" aria-label="Projects tab preview">
+              <div class="demo-header">
+                <div class="demo-controls">
+                  <span class="demo-dot"></span>
+                  <span class="demo-dot"></span>
+                  <span class="demo-dot"></span>
+                </div>
+                <span class="demo-title">Projects</span>
+              </div>
+              <div class="demo-tabs">
+                <span class="demo-tab">Chat</span>
+                <span class="demo-tab active">Projects</span>
+                <span class="demo-tab">Roadmap</span>
+                <span class="demo-tab">Concepts</span>
+              </div>
+              <div class="demo-content">
+                <div class="demo-newproject">+ New Project</div>
+                <div class="demo-project active">
+                  <div class="demo-project-name">Learning Unity for the first time</div>
+                  <div class="demo-project-desc">2D platformer prototype.</div>
+                  <div class="demo-project-meta">Updated just now</div>
+                </div>
+                <div class="demo-project">
+                  <div class="demo-project-name">Photo retouching practice</div>
+                  <div class="demo-project-desc">Skin smoothing, dodge & burn.</div>
+                  <div class="demo-project-meta">Updated 3 days ago</div>
+                </div>
+                <div class="demo-project">
+                  <div class="demo-project-name">Spreadsheet automations</div>
+                  <div class="demo-project-desc">Excel formulas for monthly reports.</div>
+                  <div class="demo-project-meta">Updated last week</div>
+                </div>
+              </div>
+            </article>
+
+            <article class="demo-panel" aria-label="Roadmap tab preview">
+              <div class="demo-header">
+                <div class="demo-controls">
+                  <span class="demo-dot"></span>
+                  <span class="demo-dot"></span>
+                  <span class="demo-dot"></span>
+                </div>
+                <span class="demo-title">Roadmap · Unity platformer</span>
+              </div>
+              <div class="demo-tabs">
+                <span class="demo-tab">Chat</span>
+                <span class="demo-tab">Projects</span>
+                <span class="demo-tab active">Roadmap</span>
+                <span class="demo-tab">Concepts</span>
+              </div>
+              <div class="demo-content">
+                <div class="demo-phase done">
+                  <span class="demo-phase-marker">✓</span>
+                  <span class="demo-phase-text">Get oriented in the Unity editor</span>
+                </div>
+                <div class="demo-phase done">
+                  <span class="demo-phase-marker">✓</span>
+                  <span class="demo-phase-text">Set up your first 2D scene</span>
+                </div>
+                <div class="demo-phase current">
+                  <span class="demo-phase-marker"></span>
+                  <span class="demo-phase-text">Make a character move and jump</span>
+                </div>
+                <div class="demo-phase">
+                  <span class="demo-phase-marker"></span>
+                  <span class="demo-phase-text">Build a level with platforms</span>
+                </div>
+                <div class="demo-phase">
+                  <span class="demo-phase-marker"></span>
+                  <span class="demo-phase-text">Add an enemy and danger</span>
+                </div>
+                <div class="demo-phase">
+                  <span class="demo-phase-marker"></span>
+                  <span class="demo-phase-text">Polish, save, and share</span>
+                </div>
+              </div>
+            </article>
+
+            <article class="demo-panel" aria-label="Concepts tab preview">
+              <div class="demo-header">
+                <div class="demo-controls">
+                  <span class="demo-dot"></span>
+                  <span class="demo-dot"></span>
+                  <span class="demo-dot"></span>
+                </div>
+                <span class="demo-title">Concepts · Unity platformer</span>
+              </div>
+              <div class="demo-tabs">
+                <span class="demo-tab">Chat</span>
+                <span class="demo-tab">Projects</span>
+                <span class="demo-tab">Roadmap</span>
+                <span class="demo-tab active">Concepts</span>
+              </div>
+              <div class="demo-content">
+                <div class="demo-concept">
+                  <div class="demo-concept-title">GameObject</div>
+                  <div class="demo-concept-desc">Every visible thing in the scene — your player, the platforms, the camera. Containers for Components.</div>
+                </div>
+                <div class="demo-concept">
+                  <div class="demo-concept-title">Component</div>
+                  <div class="demo-concept-desc">Behaviors and properties attached to a GameObject. A sprite, a script, a collider — each is a Component.</div>
+                </div>
+                <div class="demo-concept">
+                  <div class="demo-concept-title">Rigidbody2D</div>
+                  <div class="demo-concept-desc">Gives a GameObject physics — gravity, velocity, forces. Add it to your character so it falls and moves.</div>
+                </div>
+                <div class="demo-concept">
+                  <div class="demo-concept-title">Collider2D</div>
+                  <div class="demo-concept-desc">The shape used to detect overlap. BoxCollider2D for platforms, CapsuleCollider2D for the player.</div>
+                </div>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
       <section id="software">
         <div class="container">
           <header class="section-head">
@@ -251,20 +699,38 @@
         <div class="container">
           <header class="section-head">
             <span class="section-eyebrow">Download</span>
-            <h2 class="section-title">Available now for Windows.</h2>
+            <h2 class="section-title">Available now for Windows and Mac.</h2>
             <p class="section-lede">
-              Mac version coming soon. Bring your own Claude API key, or subscribe for managed access.
+              Bring your own Claude API key, or subscribe for managed access.
             </p>
           </header>
 
-          <div class="download-card">
-            <div>
-              <h3>Guided for Windows</h3>
-              <p>Version 0.1.0 · 81 MB · Free to try</p>
+          <div class="download-cards">
+            <div class="download-card">
+              <div>
+                <svg class="platform-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M0 3.449L9.75 2.1v9.451H0m10.949-9.602L24 0v11.4H10.949M0 12.6h9.75v9.451L0 20.699M10.949 12.6H24V24l-12.9-1.801"/>
+                </svg>
+                <h3>Guided for Windows</h3>
+                <p>Version 0.1.1 · 81 MB · Free to try</p>
+              </div>
+              <a href="https://github.com/gulley-jimson/guided-app/releases/latest/download/Guided.Setup.0.1.1.exe" class="btn btn-primary">
+                Download .exe
+              </a>
             </div>
-            <a href="https://github.com/gulley-jimson/guided-app/releases/latest/download/Guided.Setup.0.1.0.exe" class="btn btn-primary">
-              Download for Windows
-            </a>
+
+            <div class="download-card">
+              <div>
+                <svg class="platform-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                  <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/>
+                </svg>
+                <h3>Guided for Mac</h3>
+                <p>Version 0.1.1 · Apple Silicon &amp; Intel · Free to try</p>
+              </div>
+              <a href="https://github.com/gulley-jimson/guided-app/releases/latest/download/Guided-0.1.1.dmg" class="btn btn-primary">
+                Download .dmg
+              </a>
+            </div>
           </div>
         </div>
       </section>
@@ -293,6 +759,14 @@
       </div>
     </footer>
 
+    <script>
+      // Close any open download dropdowns when the user clicks outside of them.
+      document.addEventListener('click', function (e) {
+        document.querySelectorAll('details.dl-dropdown[open]').forEach(function (d) {
+          if (!d.contains(e.target)) d.removeAttribute('open');
+        });
+      });
+    </script>
     <script src="script.js" defer></script>
   </body>
 </html>

@@ -612,6 +612,12 @@ ipcMain.handle('env:saveKey', async (_event, value) => {
   }
 });
 
+ipcMain.handle('update:check', () => {
+  if (!isDev) autoUpdater.checkForUpdates();
+});
+
+ipcMain.handle('app:version', () => app.getVersion());
+
 app.whenReady().then(() => {
   loadSettings();
   createWindow();
@@ -619,9 +625,20 @@ app.whenReady().then(() => {
   startActiveAppPolling();
   registerGlobalShortcuts();
   // Auto-updater — checks GitHub releases on startup (production only)
-if (!isDev) {
-  autoUpdater.checkForUpdatesAndNotify();
-}
+  if (!isDev) {
+    autoUpdater.checkForUpdatesAndNotify();
+  }
+
+  autoUpdater.on('update-available', () => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('update:available');
+    }
+  });
+  autoUpdater.on('update-downloaded', () => {
+    if (win && !win.isDestroyed()) {
+      win.webContents.send('update:downloaded');
+    }
+  });
 
   // First-launch case on Windows: the OS may have invoked us with the deep-link URL in argv.
   const initialUrl = findDeepLinkUrl(process.argv);

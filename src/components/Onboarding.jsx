@@ -1,69 +1,21 @@
-import { useEffect, useRef, useState } from 'react';
-import { SignIn } from '@clerk/clerk-react';
+import { useState } from 'react';
 
-const SUBSCRIPTION_POLL_INTERVAL_MS = 5000;
-const SUBSCRIPTION_POLL_MAX_ATTEMPTS = 24; // 24 × 5s = 2 minutes
+const PRICING_URL = 'https://guided.build/pricing';
+const ANTHROPIC_CONSOLE_URL = 'https://console.anthropic.com';
 
-export default function Onboarding({ onSubmitKey, onSubscribeComplete, clerk, backendUrl }) {
+export default function Onboarding({ onSubmitKey }) {
   const [stage, setStage] = useState('choose');
-
-  // BYOK state
   const [key, setKey] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // Subscribe state
-  const [chosenPlan, setChosenPlan] = useState(null);
-  const [checkoutBusy, setCheckoutBusy] = useState(false);
-  const [checkoutError, setCheckoutError] = useState('');
-  const [waitTimedOut, setWaitTimedOut] = useState(false);
-  const pollTimerRef = useRef(null);
-
-  // When Clerk reports a signed-in user, advance the subscribe flow to the plan picker.
-  useEffect(() => {
-    if (stage === 'signin' && clerk?.isSignedIn) {
-      setStage('plan');
+  function openExternal(url) {
+    if (window.guided?.openExternal) {
+      window.guided.openExternal(url);
+    } else if (typeof window !== 'undefined') {
+      window.open(url, '_blank', 'noopener');
     }
-  }, [stage, clerk?.isSignedIn]);
-
-  // While in 'waiting', poll the backend to detect subscription activation.
-  useEffect(() => {
-    if (stage !== 'waiting') return;
-    if (!clerk?.userId) return;
-
-    let attempts = 0;
-    let cancelled = false;
-
-    async function check() {
-      if (cancelled) return;
-      attempts += 1;
-      try {
-        const res = await fetch(`${backendUrl}/subscription/${encodeURIComponent(clerk.userId)}`);
-        if (res.ok) {
-          const data = await res.json();
-          if (data?.active) {
-            cancelled = true;
-            onSubscribeComplete?.({ plan: data.plan ?? chosenPlan ?? 'monthly' });
-            return;
-          }
-        }
-      } catch {
-        // Ignore — try again.
-      }
-      if (attempts >= SUBSCRIPTION_POLL_MAX_ATTEMPTS) {
-        if (!cancelled) setWaitTimedOut(true);
-        return;
-      }
-      pollTimerRef.current = setTimeout(check, SUBSCRIPTION_POLL_INTERVAL_MS);
-    }
-
-    check();
-
-    return () => {
-      cancelled = true;
-      if (pollTimerRef.current) clearTimeout(pollTimerRef.current);
-    };
-  }, [stage, clerk?.userId, backendUrl, onSubscribeComplete, chosenPlan]);
+  }
 
   async function submitKey() {
     const trimmed = key.trim();
@@ -73,88 +25,40 @@ export default function Onboarding({ onSubmitKey, onSubscribeComplete, clerk, ba
     try {
       await onSubmitKey(trimmed);
     } catch (err) {
-      setError(err?.message ?? 'Failed to save key.');
+      setError(err?.message ?? 'Could not save the key.');
       setSaving(false);
     }
   }
 
-  async function startCheckout(plan) {
-    if (checkoutBusy) return;
-    setChosenPlan(plan);
-    setCheckoutError('');
-    setCheckoutBusy(true);
-    try {
-      const token = await clerk.getToken();
-      const res = await fetch(`${backendUrl}/checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, plan }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data?.url) {
-        throw new Error(data?.error || 'Could not start checkout.');
-      }
-      if (window.guided?.openExternal) {
-        await window.guided.openExternal(data.url);
-      } else if (typeof window !== 'undefined') {
-        window.open(data.url, '_blank', 'noopener');
-      }
-      setStage('waiting');
-    } catch (err) {
-      setCheckoutError(err?.message ?? 'Could not start checkout.');
-    } finally {
-      setCheckoutBusy(false);
-    }
-  }
-
-  function retryWait() {
-    setWaitTimedOut(false);
-    setStage('plan');
-  }
-
   return (
-    <div className="flex h-full flex-col items-center justify-center px-6 py-8 text-center">
+    <div
+      className="flex h-full w-full flex-col items-center justify-center px-5 py-8 text-center"
+      style={{ backgroundColor: '#0f0f13' }}
+    >
       <Logo />
-      <h1 className="mt-3 text-base font-semibold text-panel-text">
-        {stage === 'plan' || stage === 'waiting'
-          ? chosenPlan === 'yearly' || stage === 'plan'
-            ? 'Pick a plan'
-            : 'Almost there'
-          : 'Welcome to Guided'}
-      </h1>
-      <p className="mt-1 max-w-[280px] text-xs leading-relaxed text-panel-muted">
-        {stage === 'choose' && 'Your AI companion for learning software through real projects.'}
-        {stage === 'apiKey' && 'Drop in your Anthropic API key to get going.'}
-        {stage === 'signin' && 'Sign in or create an account to subscribe.'}
-        {stage === 'plan' && 'Cancel anytime. Yearly saves you a few months.'}
-        {stage === 'waiting' && 'Complete checkout in your browser — we’ll auto-detect when payment is confirmed.'}
+      <h1 className="mt-4 text-lg font-semibold text-panel-text">Welcome to Guided</h1>
+      <p className="mt-1 max-w-[300px] text-xs leading-relaxed text-panel-muted">
+        Your AI learning companion. Let&apos;s get you set up.
       </p>
 
       {stage === 'choose' && (
-        <div className="mt-6 w-full space-y-2">
-          <Choice
-            title="Connect your Anthropic API key"
-            subtitle="Free · bring your own key"
+        <div className="mt-6 flex w-full max-w-[640px] flex-col gap-3 md:flex-row">
+          <Card
+            title="Bring your own API key"
+            subtitle="Use your Claude API key. Free to start."
             onClick={() => setStage('apiKey')}
           />
-          <Choice
-            title="Subscribe to Guided"
-            subtitle={
-              clerk?.available
-                ? 'From $12/mo · includes API access'
-                : 'Configure CLERK_PUBLISHABLE_KEY to enable'
-            }
-            disabled={!clerk?.available}
-            onClick={() => setStage('signin')}
+          <Card
+            title="Get Guided Pro"
+            subtitle="No API key needed. $12/mo."
+            onClick={() => openExternal(PRICING_URL)}
+            featured
           />
         </div>
       )}
 
       {stage === 'apiKey' && (
-        <div className="mt-6 w-full space-y-2 text-left">
-          <p className="text-[11px] leading-snug text-panel-muted">
-            Get a key at console.anthropic.com — it stays on your device.
-          </p>
+        <div className="mt-6 flex w-full max-w-[360px] flex-col gap-2 text-left">
           <input
             type="password"
             value={key}
@@ -170,185 +74,58 @@ export default function Onboarding({ onSubmitKey, onSubscribeComplete, clerk, ba
             placeholder="sk-ant-…"
             autoFocus
             disabled={saving}
-            className="no-drag w-full rounded-md border border-panel-border bg-panel-bg px-2.5 py-1.5 text-xs font-mono text-panel-text outline-none placeholder:text-panel-muted/70 focus:border-panel-accent/60 disabled:opacity-60"
+            className="no-drag w-full rounded-md border border-panel-border bg-panel-bg px-2.5 py-2 text-xs font-mono text-panel-text outline-none placeholder:text-panel-muted/70 focus:border-panel-accent/60 disabled:opacity-60"
           />
           {error && <p className="text-[11px] text-red-300">{error}</p>}
           <div className="flex items-center gap-2 pt-1">
-            <SecondaryButton onClick={() => setStage('choose')} disabled={saving}>
+            <button
+              onClick={() => setStage('choose')}
+              disabled={saving}
+              className="rounded-md border border-panel-border bg-panel-bg px-2.5 py-1 text-xs text-panel-muted hover:text-panel-text disabled:opacity-50"
+            >
               Back
-            </SecondaryButton>
-            <PrimaryButton
+            </button>
+            <button
               onClick={submitKey}
               disabled={!key.trim() || saving}
-              className="flex-1"
+              className="flex-1 rounded-md bg-panel-accent/90 px-2.5 py-1 text-xs font-medium text-white shadow-sm transition-opacity hover:bg-panel-accent disabled:opacity-40"
             >
               {saving ? 'Saving…' : 'Save & continue'}
-            </PrimaryButton>
+            </button>
           </div>
-        </div>
-      )}
-
-      {stage === 'signin' && (
-        <div className="mt-5 w-full">
-          {clerk?.available ? (
-            <div className="no-drag flex justify-center">
-              <SignIn routing="virtual" />
-            </div>
-          ) : (
-            <p className="text-[11px] text-red-300">
-              Clerk is not configured. Set CLERK_PUBLISHABLE_KEY in .env.
-            </p>
-          )}
-          <div className="mt-3">
-            <SecondaryButton onClick={() => setStage('choose')}>Back</SecondaryButton>
-          </div>
-        </div>
-      )}
-
-      {stage === 'plan' && (
-        <div className="mt-5 w-full space-y-2">
-          <PlanCard
-            plan="monthly"
-            price="$12"
-            period="/month"
-            description="Cancel anytime."
-            onSelect={() => startCheckout('monthly')}
-            disabled={checkoutBusy}
-          />
-          <PlanCard
-            plan="yearly"
-            price="$99"
-            period="/year"
-            description="Save ~31% — about $8.25/month."
-            badge="Best Value"
-            onSelect={() => startCheckout('yearly')}
-            disabled={checkoutBusy}
-          />
-          {checkoutError && (
-            <p className="text-[11px] text-red-300">{checkoutError}</p>
-          )}
-          <div className="flex items-center gap-2 pt-1">
-            <SecondaryButton
-              onClick={async () => {
-                try { await clerk?.signOut?.(); } catch {}
-                setStage('choose');
-              }}
-            >
-              Back
-            </SecondaryButton>
-          </div>
-        </div>
-      )}
-
-      {stage === 'waiting' && (
-        <div className="mt-5 w-full space-y-3 text-left">
-          {waitTimedOut ? (
-            <>
-              <p className="text-[11px] leading-snug text-panel-muted">
-                We didn’t see a confirmed payment yet. If you completed checkout in
-                your browser, give it another moment — we’ll keep checking.
-              </p>
-              <div className="flex items-center gap-2">
-                <PrimaryButton onClick={retryWait} className="flex-1">
-                  Check again
-                </PrimaryButton>
-              </div>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center justify-center gap-2 text-panel-muted">
-                <Spinner />
-                <span className="text-xs">Waiting for payment…</span>
-              </div>
-              <p className="text-[11px] text-center leading-snug text-panel-muted">
-                Complete checkout in the browser tab we just opened.
-              </p>
-            </>
-          )}
+          <button
+            type="button"
+            onClick={() => openExternal(ANTHROPIC_CONSOLE_URL)}
+            className="mt-2 self-start text-[11px] text-panel-accent transition-opacity hover:opacity-80"
+          >
+            Get your key at console.anthropic.com →
+          </button>
         </div>
       )}
     </div>
   );
 }
 
-function Choice({ title, subtitle, onClick, disabled }) {
-  const base = 'no-drag w-full rounded-lg border px-3 py-3 text-left transition-colors';
-  const cls = disabled
-    ? `${base} border-panel-border bg-panel-surface/40 opacity-60 cursor-not-allowed`
-    : `${base} border-panel-border bg-panel-surface hover:border-panel-accent/60 hover:bg-panel-surface`;
-  return (
-    <button onClick={disabled ? undefined : onClick} disabled={disabled} className={cls}>
-      <div className="text-sm font-medium text-panel-text">{title}</div>
-      <div className="mt-0.5 text-[11px] text-panel-muted">{subtitle}</div>
-    </button>
-  );
-}
-
-function PlanCard({ plan, price, period, description, badge, onSelect, disabled }) {
-  const ringCls = badge
+function Card({ title, subtitle, onClick, featured }) {
+  const baseCls =
+    'no-drag flex-1 rounded-xl border px-4 py-4 text-left transition-colors';
+  const variantCls = featured
     ? 'border-panel-accent/60 bg-panel-accent/10 hover:bg-panel-accent/15'
     : 'border-panel-border bg-panel-surface hover:border-panel-accent/60';
   return (
-    <button
-      onClick={disabled ? undefined : onSelect}
-      disabled={disabled}
-      className={`no-drag w-full rounded-lg border px-3 py-3 text-left transition-colors disabled:opacity-50 ${ringCls}`}
-    >
-      <div className="flex items-center justify-between">
-        <div className="text-sm font-medium text-panel-text capitalize">{plan}</div>
-        {badge && (
-          <span className="rounded-full bg-panel-accent/30 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-panel-text">
-            {badge}
-          </span>
-        )}
-      </div>
-      <div className="mt-1 flex items-baseline gap-1">
-        <span className="text-lg font-semibold text-panel-text">{price}</span>
-        <span className="text-[11px] text-panel-muted">{period}</span>
-      </div>
-      {description && (
-        <div className="mt-0.5 text-[11px] text-panel-muted">{description}</div>
-      )}
+    <button onClick={onClick} className={`${baseCls} ${variantCls}`}>
+      <div className="text-sm font-semibold text-panel-text">{title}</div>
+      <div className="mt-1 text-[11px] leading-snug text-panel-muted">{subtitle}</div>
     </button>
-  );
-}
-
-function PrimaryButton({ children, onClick, disabled, className = '' }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className={`rounded-md bg-panel-accent/90 px-2.5 py-1 text-xs font-medium text-white shadow-sm transition-opacity hover:bg-panel-accent disabled:opacity-40 ${className}`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function SecondaryButton({ children, onClick, disabled }) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      className="rounded-md border border-panel-border bg-panel-bg px-2.5 py-1 text-xs text-panel-muted hover:text-panel-text disabled:opacity-50"
-    >
-      {children}
-    </button>
-  );
-}
-
-function Spinner() {
-  return (
-    <span className="block h-3 w-3 animate-spin rounded-full border-2 border-panel-border border-t-panel-accent" />
   );
 }
 
 function Logo() {
   return (
-    <div className="grid h-10 w-10 place-items-center rounded-lg bg-gradient-to-br from-panel-accent to-indigo-500 shadow-sm">
+    <div className="grid h-12 w-12 place-items-center rounded-xl bg-gradient-to-br from-panel-accent to-indigo-500 shadow-lg">
       <svg
         viewBox="0 0 24 24"
-        className="h-6 w-6 text-white"
+        className="h-7 w-7 text-white"
         fill="none"
         stroke="currentColor"
         strokeWidth="2.25"

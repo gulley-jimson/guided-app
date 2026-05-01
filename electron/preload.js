@@ -34,4 +34,16 @@ contextBridge.exposeInMainWorld('guided', {
     ipcRenderer.on('auth:deep-link', handler);
     return () => ipcRenderer.removeListener('auth:deep-link', handler);
   },
+  onUpdateAvailable: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('update:available', handler);
+    return () => ipcRenderer.removeListener('update:available', handler);
+  },
+  onUpdateDownloaded: (callback) => {
+    const handler = () => callback();
+    ipcRenderer.on('update:downloaded', handler);
+    return () => ipcRenderer.removeListener('update:downloaded', handler);
+  },
+  checkForUpdates: () => ipcRenderer.invoke('update:check'),
+  getVersion: () => ipcRenderer.invoke('app:version'),
 });

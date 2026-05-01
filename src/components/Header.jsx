@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 
 export default function Header() {
   const [alwaysOnTop, setAlwaysOnTop] = useState(true);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -12,6 +13,15 @@ export default function Header() {
     }
     return () => {
       mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    const offAvail = window.guided?.onUpdateAvailable?.(() => setUpdateAvailable(true));
+    const offDone = window.guided?.onUpdateDownloaded?.(() => setUpdateAvailable(true));
+    return () => {
+      try { offAvail?.(); } catch {}
+      try { offDone?.(); } catch {}
     };
   }, []);
 
@@ -34,6 +44,15 @@ export default function Header() {
     <div className="drag-region flex items-center gap-2 px-3 py-2.5 border-b border-panel-border bg-panel-surface/60">
       <Logo />
       <span className="text-sm font-semibold tracking-tight">Guided</span>
+      {updateAvailable && (
+        <span
+          title="Update available — restart Guided to install."
+          className="no-drag ml-1 inline-flex items-center gap-1 rounded-full border border-panel-accent/40 bg-panel-accent/15 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-panel-accent"
+        >
+          <span className="h-1.5 w-1.5 rounded-full bg-panel-accent" aria-hidden="true" />
+          Update available
+        </span>
+      )}
       <div className="ml-auto flex items-center gap-0.5">
         <ControlButton
           title={alwaysOnTop ? 'Always on top: on' : 'Always on top: off'}
