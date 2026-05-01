@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Learn Figma — Guided</title>
+    <meta name="description" content="The best free and paid resources for learning Figma — official docs, top YouTube channels, communities, and courses." />
+    <meta name="theme-color" content="#0b0d10" />
+    <style>
+      html.is-locked body > *:not(#gate-overlay) { display: none !important; }
+      #gate-overlay {
+        position: fixed; inset: 0; z-index: 999999;
+        background: #0f0f13;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        color: #e6e8eb;
+      }
+      #gate-overlay .gate-card {
+        width: 100%; max-width: 360px;
+        padding: 32px;
+        background: #15181d;
+        border: 1px solid #23272e;
+        border-radius: 14px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+      }
+      #gate-overlay .gate-logo {
+        display: flex; align-items: center; justify-content: center;
+        gap: 10px; margin-bottom: 24px;
+      }
+      #gate-overlay .gate-mark {
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #a78bfa, #6366f1);
+        display: grid; place-items: center;
+        box-shadow: 0 6px 20px rgba(167, 139, 250, 0.35);
+      }
+      #gate-overlay .gate-mark svg { width: 20px; height: 20px; color: #fff; }
+      #gate-overlay .gate-name {
+        font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+      }
+      #gate-overlay input {
+        width: 100%; box-sizing: border-box;
+        padding: 12px 14px;
+        background: #0b0d10;
+        border: 1px solid #2f3441;
+        border-radius: 8px;
+        color: #e6e8eb;
+        font-size: 14px; outline: none;
+        margin-bottom: 12px;
+      }
+      #gate-overlay input:focus { border-color: #a78bfa; }
+      #gate-overlay button {
+        width: 100%; padding: 12px;
+        background: #a78bfa; color: #0b0d10;
+        border: none; border-radius: 8px;
+        font-size: 14px; font-weight: 600; cursor: pointer;
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      #gate-overlay button:hover { background: #8b5cf6; color: #fff; }
+      @keyframes gateShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-8px); }
+        40%, 80% { transform: translateX(8px); }
+      }
+      #gate-overlay .gate-card.shake {
+        animation: gateShake 0.4s ease-in-out;
+        border-color: #f87171;
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          if (sessionStorage.getItem('guided.unlocked') === 'true') return;
+        } catch (e) {}
+        document.documentElement.classList.add('is-locked');
+
+        function build() {
+          var overlay = document.createElement('div');
+          overlay.id = 'gate-overlay';
+          overlay.innerHTML =
+            '<form class="gate-card" autocomplete="off">' +
+            '<div class="gate-logo">' +
+            '<span class="gate-mark">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+            '<circle cx="12" cy="12" r="3" />' +
+            '<path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />' +
+            '</svg>' +
+            '</span>' +
+            '<span class="gate-name">Guided</span>' +
+            '</div>' +
+            '<input type="password" name="p" placeholder="Password" autocomplete="off" autofocus />' +
+            '<button type="submit">Enter</button>' +
+            '</form>';
+          document.body.insertBefore(overlay, document.body.firstChild);
+          var card = overlay.querySelector('.gate-card');
+          var form = overlay.querySelector('form');
+          var input = overlay.querySelector('input');
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (input.value === 'gulley_guided2026') {
+              try { sessionStorage.setItem('guided.unlocked', 'true'); } catch (err) {}
+              document.documentElement.classList.remove('is-locked');
+              overlay.remove();
+            } else {
+              card.classList.remove('shake');
+              void card.offsetWidth;
+              card.classList.add('shake');
+              input.value = '';
+              input.focus();
+            }
+          });
+          setTimeout(function () { input.focus(); }, 0);
+        }
+
+        if (document.body) build();
+        else document.addEventListener('DOMContentLoaded', build, { once: true });
+      })();
+    </script>
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <a href="../index.html" class="brand" aria-label="Guided home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
+            </svg>
+          </span>
+          <span class="brand-name">Guided</span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="../directory.html">Directory</a>
+          <a href="../index.html#download" class="nav-cta">Download</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section class="directory-head">
+        <div class="container">
+          <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="../directory.html">Directory</a>
+            <span class="sep">/</span>
+            <span>Design</span>
+            <span class="sep">/</span>
+            <span>Figma</span>
+          </nav>
+
+          <header class="section-head" style="margin-top: 18px;">
+            <span class="section-eyebrow">Figma</span>
+            <h1 class="section-title">Learn Figma.</h1>
+            <p class="section-lede">Whether you&#39;re shipping a design system or sketching your first wireframe, these are the channels and courses that consistently deliver value for Figma users.</p>
+          </header>
+        </div>
+      </section>
+
+      <div class="container">
+        <div class="resource-list">
+          <article class="resource featured">
+            <div class="resource-info">
+              <h3>
+                Figma YouTube
+                <span class="featured-badge">Featured</span>
+              </h3>
+              <p>Official tutorials, design systems content, and Config recordings.</p>
+              <div class="tags">
+                <span class="tag">Official</span>
+                <span class="tag">YouTube</span>
+              </div>
+            </div>
+            <a href="https://www.youtube.com/@Figma" class="resource-cta" target="_blank" rel="noopener">
+              Visit
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7" /><path d="M7 7h10v10" /></svg>
+            </a>
+          </article>
+
+          <article class="resource featured">
+            <div class="resource-info">
+              <h3>
+                DesignCourse
+                <span class="featured-badge">Featured</span>
+              </h3>
+              <p>Gary Simon&#39;s UI/UX tutorials — modern, practical, Figma-heavy.</p>
+              <div class="tags">
+                <span class="tag">YouTube</span>
+                <span class="tag">UI/UX</span>
+              </div>
+            </div>
+            <a href="https://www.youtube.com/@DesignCourse" class="resource-cta" target="_blank" rel="noopener">
+              Visit
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7" /><path d="M7 7h10v10" /></svg>
+            </a>
+          </article>
+
+          <article class="resource">
+            <div class="resource-info">
+              <h3>
+                Figma Help Center
+              </h3>
+              <p>Comprehensive official documentation and step-by-step guides.</p>
+              <div class="tags">
+                <span class="tag">Official</span>
+                <span class="tag">Reference</span>
+              </div>
+            </div>
+            <a href="https://help.figma.com" class="resource-cta" target="_blank" rel="noopener">
+              Visit
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7" /><path d="M7 7h10v10" /></svg>
+            </a>
+          </article>
+
+          <article class="resource">
+            <div class="resource-info">
+              <h3>
+                Mizko
+              </h3>
+              <p>Figma-first UI/UX content with a strong product-design lens.</p>
+              <div class="tags">
+                <span class="tag">YouTube</span>
+                <span class="tag">Product design</span>
+              </div>
+            </div>
+            <a href="https://www.youtube.com/@Mizko" class="resource-cta" target="_blank" rel="noopener">
+              Visit
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7" /><path d="M7 7h10v10" /></svg>
+            </a>
+          </article>
+
+          <article class="resource">
+            <div class="resource-info">
+              <h3>
+                Figma Community
+              </h3>
+              <p>Free templates, plugins, and design files from the community.</p>
+              <div class="tags">
+                <span class="tag">Templates</span>
+                <span class="tag">Plugins</span>
+              </div>
+            </div>
+            <a href="https://www.figma.com/community" class="resource-cta" target="_blank" rel="noopener">
+              Visit
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7" /><path d="M7 7h10v10" /></svg>
+            </a>
+          </article>
+
+          <article class="resource">
+            <div class="resource-info">
+              <h3>
+                Flux Academy
+              </h3>
+              <p>Ran Segall&#39;s web design courses with heavy Figma use.</p>
+              <div class="tags">
+                <span class="tag">Paid</span>
+                <span class="tag">Web design</span>
+              </div>
+            </div>
+            <a href="https://www.fluxacademy.com" class="resource-cta" target="_blank" rel="noopener">
+              Visit
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7" /><path d="M7 7h10v10" /></svg>
+            </a>
+          </article>
+
+          <article class="resource">
+            <div class="resource-info">
+              <h3>
+                r/FigmaDesign
+              </h3>
+              <p>Subreddit for help, plugin shares, and feedback.</p>
+              <div class="tags">
+                <span class="tag">Community</span>
+              </div>
+            </div>
+            <a href="https://www.reddit.com/r/FigmaDesign/" class="resource-cta" target="_blank" rel="noopener">
+              Visit
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7" /><path d="M7 7h10v10" /></svg>
+            </a>
+          </article>
+
+          <article class="resource">
+            <div class="resource-info">
+              <h3>
+                Skillshare — Figma
+              </h3>
+              <p>Project-based Figma courses for every level.</p>
+              <div class="tags">
+                <span class="tag">Paid</span>
+                <span class="tag">Courses</span>
+              </div>
+            </div>
+            <a href="https://www.skillshare.com/en/browse/figma" class="resource-cta" target="_blank" rel="noopener">
+              Visit
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7" /><path d="M7 7h10v10" /></svg>
+            </a>
+          </article>
+        </div>
+
+        <div class="download-card">
+          <div>
+            <h3>Get Guided for Figma</h3>
+            <p>An AI companion that learns your project and teaches Figma step by step, on your screen.</p>
+          </div>
+          <a href="../index.html#signup" class="btn btn-primary">Request early access</a>
+        </div>
+      </div>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-left">
+          <a href="../index.html" class="brand" aria-label="Guided home">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
+              </svg>
+            </span>
+            <span class="brand-name">Guided</span>
+          </a>
+          <span class="footer-copy">© 2026 Guided. All rights reserved.</span>
+        </div>
+        <nav class="footer-nav" aria-label="Footer">
+          <a href="../directory.html">Directory</a>
+          <a href="../index.html#signup">Early access</a>
+          <a href="mailto:hello@guided.build">Contact</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="../script.js" defer></script>
+  </body>
+</html>

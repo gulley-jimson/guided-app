@@ -650,6 +650,73 @@ section {
   display: block;
 }
 
+/* ---------- Category sections (directory) ---------- */
+
+.category-section {
+  padding-bottom: 48px;
+}
+
+.category-section.is-hidden {
+  display: none;
+}
+
+.category-section .category-section-head {
+  margin-bottom: 16px;
+}
+
+.category-section h2 {
+  font-size: clamp(20px, 2.4vw, 24px);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 4px;
+}
+
+.category-section .category-blurb {
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.tool-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  transition: border-color 0.18s ease, transform 0.18s ease, background 0.18s ease;
+}
+
+.tool-card:hover {
+  border-color: var(--accent);
+  background: var(--surface-2);
+  transform: translateY(-1px);
+}
+
+.tool-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.tool-card p {
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.tool-card.is-hidden {
+  display: none;
+}
+
 /* ---------- Resource listings (category page) ---------- */
 
 .breadcrumb {

@@ -37,27 +37,34 @@ function setStatus(el, message, kind) {
   if (kind) el.classList.add(kind);
 }
 
-// Directory search — filter category cards by title and description.
+// Directory search — filter individual tool cards across every category section.
+// Sections whose tools are all hidden collapse out of view.
 function initDirectorySearch() {
   const input = document.querySelector('[data-directory-search]');
   if (!input) return;
 
-  const cards = Array.from(document.querySelectorAll('[data-category]'));
+  const tools = Array.from(document.querySelectorAll('[data-tool]'));
+  const sections = Array.from(document.querySelectorAll('[data-category-section]'));
   const empty = document.querySelector('[data-empty-state]');
 
   input.addEventListener('input', () => {
     const q = input.value.trim().toLowerCase();
-    let visible = 0;
+    let visibleTotal = 0;
 
-    for (const card of cards) {
-      const haystack = (card.dataset.search ?? card.textContent ?? '').toLowerCase();
+    for (const tool of tools) {
+      const haystack = (tool.dataset.search ?? tool.textContent ?? '').toLowerCase();
       const match = q === '' || haystack.includes(q);
-      card.classList.toggle('is-hidden', !match);
-      if (match) visible += 1;
+      tool.classList.toggle('is-hidden', !match);
+      if (match) visibleTotal += 1;
+    }
+
+    for (const section of sections) {
+      const visibleTools = section.querySelectorAll('[data-tool]:not(.is-hidden)').length;
+      section.classList.toggle('is-hidden', visibleTools === 0);
     }
 
     if (empty) {
-      empty.classList.toggle('is-visible', visible === 0 && q !== '');
+      empty.classList.toggle('is-visible', visibleTotal === 0 && q !== '');
     }
   });
 }

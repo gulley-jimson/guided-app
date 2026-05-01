@@ -6,7 +6,7 @@
     <title>Directory — Guided</title>
     <meta
       name="description"
-      content="Curated learning resources for the software you use every day — Photoshop, Blender, Figma, Premiere, and more."
+      content="Curated learning resources across design, video, 3D, game development, audio, productivity, photography, and more."
     />
     <meta name="theme-color" content="#0b0d10" />
     <style>
@@ -146,10 +146,10 @@
         <div class="container">
           <header class="section-head">
             <span class="section-eyebrow">Directory</span>
-            <h1 class="section-title">Software resources, curated by category.</h1>
+            <h1 class="section-title">Learning resources, by software.</h1>
             <p class="section-lede">
-              Hand-picked tutorials, channels, and reference sites for the tools you're
-              learning. Browse by category or search.
+              Hand-picked tutorials, channels, and reference sites for every tool you might be learning.
+              Browse by category or search across them all.
             </p>
           </header>
 
@@ -160,172 +160,484 @@
             </svg>
             <input
               type="search"
-              placeholder="Search categories…"
+              placeholder="Search for a tool…"
               data-directory-search
-              aria-label="Search categories"
+              aria-label="Search tools"
             />
           </div>
         </div>
       </section>
 
       <div class="container">
-        <div class="directory-grid">
+        <section class="category-section" data-category-section>
+          <header class="category-section-head">
+            <h2>Design</h2>
+            <p class="category-blurb">Vector, layout, and graphic design tools.</p>
+          </header>
+          <div class="tool-grid">
           <a
-            href="directory/photoshop.html"
-            class="category-card"
-            data-category
-            data-search="adobe creative suite photoshop illustrator after effects premiere indesign"
+            href="directory/illustrator.html"
+            class="tool-card"
+            data-tool
+            data-search="illustrator vector graphics for logos, icons, and illustration. design"
           >
-            <div class="category-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="13.5" cy="6.5" r=".5" />
-                <circle cx="17.5" cy="10.5" r=".5" />
-                <circle cx="8.5" cy="7.5" r=".5" />
-                <circle cx="6.5" cy="12.5" r=".5" />
-                <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z" />
-              </svg>
-            </div>
-            <h3>Adobe Creative Suite</h3>
-            <p>Photoshop, Illustrator, Premiere, After Effects, and the rest of the family.</p>
-            <span class="view-link">View resources →</span>
+            <h3>Illustrator</h3>
+            <p>Vector graphics for logos, icons, and illustration.</p>
           </a>
-
           <a
-            href="#"
-            class="category-card"
-            data-category
-            data-search="blender 3d modelling sculpting"
+            href="directory/figma.html"
+            class="tool-card"
+            data-tool
+            data-search="figma browser-based ui/ux design and prototyping. design"
           >
-            <div class="category-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-                <line x1="12" y1="22.08" x2="12" y2="12" />
-              </svg>
-            </div>
+            <h3>Figma</h3>
+            <p>Browser-based UI/UX design and prototyping.</p>
+          </a>
+          <a
+            href="directory/canva.html"
+            class="tool-card"
+            data-tool
+            data-search="canva templates and drag-and-drop design for everything. design"
+          >
+            <h3>Canva</h3>
+            <p>Templates and drag-and-drop design for everything.</p>
+          </a>
+          <a
+            href="directory/indesign.html"
+            class="tool-card"
+            data-tool
+            data-search="indesign long-form layout for books, magazines, and print. design"
+          >
+            <h3>InDesign</h3>
+            <p>Long-form layout for books, magazines, and print.</p>
+          </a>
+          <a
+            href="directory/affinity-designer.html"
+            class="tool-card"
+            data-tool
+            data-search="affinity designer a pro vector + raster app with a one-time price. design"
+          >
+            <h3>Affinity Designer</h3>
+            <p>A pro vector + raster app with a one-time price.</p>
+          </a>
+          <a
+            href="directory/sketch.html"
+            class="tool-card"
+            data-tool
+            data-search="sketch mac-only ui design app, deep with plugins. design"
+          >
+            <h3>Sketch</h3>
+            <p>Mac-only UI design app, deep with plugins.</p>
+          </a>
+          <a
+            href="directory/gimp.html"
+            class="tool-card"
+            data-tool
+            data-search="gimp free, open-source image editor with deep capability. design"
+          >
+            <h3>GIMP</h3>
+            <p>Free, open-source image editor with deep capability.</p>
+          </a>
+          </div>
+        </section>
+
+        <section class="category-section" data-category-section>
+          <header class="category-section-head">
+            <h2>Video</h2>
+            <p class="category-blurb">Editing, motion graphics, and finishing.</p>
+          </header>
+          <div class="tool-grid">
+          <a
+            href="directory/premiere-pro.html"
+            class="tool-card"
+            data-tool
+            data-search="premiere pro adobe’s flagship nle for editing, colour, and finishing. video"
+          >
+            <h3>Premiere Pro</h3>
+            <p>Adobe’s flagship NLE for editing, colour, and finishing.</p>
+          </a>
+          <a
+            href="directory/after-effects.html"
+            class="tool-card"
+            data-tool
+            data-search="after effects compositing and motion graphics workhorse. video"
+          >
+            <h3>After Effects</h3>
+            <p>Compositing and motion graphics workhorse.</p>
+          </a>
+          <a
+            href="directory/davinci-resolve.html"
+            class="tool-card"
+            data-tool
+            data-search="davinci resolve edit, colour, audio, and vfx in one free app. video"
+          >
+            <h3>DaVinci Resolve</h3>
+            <p>Edit, colour, audio, and VFX in one free app.</p>
+          </a>
+          <a
+            href="directory/final-cut-pro.html"
+            class="tool-card"
+            data-tool
+            data-search="final cut pro apple’s magnetic-timeline editor for mac. video"
+          >
+            <h3>Final Cut Pro</h3>
+            <p>Apple’s magnetic-timeline editor for Mac.</p>
+          </a>
+          <a
+            href="directory/capcut.html"
+            class="tool-card"
+            data-tool
+            data-search="capcut fast, mobile-first editor with a strong desktop app. video"
+          >
+            <h3>CapCut</h3>
+            <p>Fast, mobile-first editor with a strong desktop app.</p>
+          </a>
+          <a
+            href="directory/hitfilm.html"
+            class="tool-card"
+            data-tool
+            data-search="hitfilm editor + vfx compositor with a generous free tier. video"
+          >
+            <h3>HitFilm</h3>
+            <p>Editor + VFX compositor with a generous free tier.</p>
+          </a>
+          </div>
+        </section>
+
+        <section class="category-section" data-category-section>
+          <header class="category-section-head">
+            <h2>3D</h2>
+            <p class="category-blurb">Modelling, sculpting, animation, simulation.</p>
+          </header>
+          <div class="tool-grid">
+          <a
+            href="directory/blender.html"
+            class="tool-card"
+            data-tool
+            data-search="blender free, full-featured 3d modelling, animation, and rendering. 3d"
+          >
             <h3>Blender</h3>
-            <p>Modelling, sculpting, animation, and rendering inside the open-source 3D suite.</p>
-            <span class="view-link">View resources →</span>
+            <p>Free, full-featured 3D modelling, animation, and rendering.</p>
           </a>
-
           <a
-            href="#"
-            class="category-card"
-            data-category
-            data-search="game engines unity unreal godot"
+            href="directory/maya.html"
+            class="tool-card"
+            data-tool
+            data-search="maya industry-standard 3d for film, animation, and games. 3d"
           >
-            <div class="category-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="6" y1="11" x2="10" y2="11" />
-                <line x1="8" y1="9" x2="8" y2="13" />
-                <line x1="15" y1="12" x2="15.01" y2="12" />
-                <line x1="18" y1="10" x2="18.01" y2="10" />
-                <path d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258A4 4 0 0 0 17.32 5z" />
-              </svg>
-            </div>
-            <h3>Game Engines</h3>
-            <p>Unity, Unreal Engine, Godot — for shipping playable worlds.</p>
-            <span class="view-link">View resources →</span>
+            <h3>Maya</h3>
+            <p>Industry-standard 3D for film, animation, and games.</p>
           </a>
-
           <a
-            href="#"
-            class="category-card"
-            data-category
-            data-search="video editing premiere final cut davinci resolve"
+            href="directory/cinema4d.html"
+            class="tool-card"
+            data-tool
+            data-search="cinema 4d friendly motion-graphics 3d, beloved by designers. 3d"
           >
-            <div class="category-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="2" width="20" height="20" rx="2.18" />
-                <line x1="7" y1="2" x2="7" y2="22" />
-                <line x1="17" y1="2" x2="17" y2="22" />
-                <line x1="2" y1="12" x2="22" y2="12" />
-                <line x1="2" y1="7" x2="7" y2="7" />
-                <line x1="2" y1="17" x2="7" y2="17" />
-                <line x1="17" y1="17" x2="22" y2="17" />
-                <line x1="17" y1="7" x2="22" y2="7" />
-              </svg>
-            </div>
-            <h3>Video Editing</h3>
-            <p>Premiere Pro, Final Cut Pro, DaVinci Resolve — cut, colour, and finish.</p>
-            <span class="view-link">View resources →</span>
+            <h3>Cinema 4D</h3>
+            <p>Friendly motion-graphics 3D, beloved by designers.</p>
           </a>
-
           <a
-            href="#"
-            class="category-card"
-            data-category
-            data-search="microsoft office word excel powerpoint outlook"
+            href="directory/zbrush.html"
+            class="tool-card"
+            data-tool
+            data-search="zbrush industry-standard digital sculpting. 3d"
           >
-            <div class="category-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-                <polyline points="10 9 9 9 8 9" />
-              </svg>
-            </div>
-            <h3>Microsoft Office</h3>
-            <p>Word, Excel, PowerPoint, Outlook — the productivity suite at its best.</p>
-            <span class="view-link">View resources →</span>
+            <h3>ZBrush</h3>
+            <p>Industry-standard digital sculpting.</p>
           </a>
-
           <a
-            href="#"
-            class="category-card"
-            data-category
-            data-search="design tools figma sketch framer affinity"
+            href="directory/substance-painter.html"
+            class="tool-card"
+            data-tool
+            data-search="substance painter industry-standard 3d texture painting. 3d"
           >
-            <div class="category-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 19l7-7 3 3-7 7-3-3z" />
-                <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" />
-                <path d="M2 2l7.586 7.586" />
-                <circle cx="11" cy="11" r="2" />
-              </svg>
-            </div>
-            <h3>Design Tools</h3>
-            <p>Figma, Sketch, Framer, Affinity — modern interface and graphic design.</p>
-            <span class="view-link">View resources →</span>
+            <h3>Substance Painter</h3>
+            <p>Industry-standard 3D texture painting.</p>
           </a>
-
           <a
-            href="#"
-            class="category-card"
-            data-category
-            data-search="development code editor vs code cursor xcode"
+            href="directory/houdini.html"
+            class="tool-card"
+            data-tool
+            data-search="houdini procedural vfx and simulation, deep and node-based. 3d"
           >
-            <div class="category-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <polyline points="16 18 22 12 16 6" />
-                <polyline points="8 6 2 12 8 18" />
-              </svg>
-            </div>
-            <h3>Development</h3>
-            <p>VS Code, Cursor, Xcode, JetBrains — write and ship software.</p>
-            <span class="view-link">View resources →</span>
+            <h3>Houdini</h3>
+            <p>Procedural VFX and simulation, deep and node-based.</p>
           </a>
+          </div>
+        </section>
 
+        <section class="category-section" data-category-section>
+          <header class="category-section-head">
+            <h2>Game Development</h2>
+            <p class="category-blurb">Engines and tools for shipping games.</p>
+          </header>
+          <div class="tool-grid">
           <a
-            href="#"
-            class="category-card"
-            data-category
-            data-search="music audio logic ableton fl studio reaper"
+            href="directory/unity.html"
+            class="tool-card"
+            data-tool
+            data-search="unity c# game engine for 2d, 3d, mobile, and xr. game development"
           >
-            <div class="category-icon" aria-hidden="true">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M3 18v-6a9 9 0 0 1 18 0v6" />
-                <path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z" />
-              </svg>
-            </div>
-            <h3>Music &amp; Audio</h3>
-            <p>Logic Pro, Ableton Live, FL Studio, Reaper — write, record, mix.</p>
-            <span class="view-link">View resources →</span>
+            <h3>Unity</h3>
+            <p>C# game engine for 2D, 3D, mobile, and XR.</p>
           </a>
+          <a
+            href="directory/unreal-engine.html"
+            class="tool-card"
+            data-tool
+            data-search="unreal engine cinematic-grade engine for games, film, and viz. game development"
+          >
+            <h3>Unreal Engine</h3>
+            <p>Cinematic-grade engine for games, film, and viz.</p>
+          </a>
+          <a
+            href="directory/godot.html"
+            class="tool-card"
+            data-tool
+            data-search="godot free, open-source 2d/3d engine with gdscript. game development"
+          >
+            <h3>Godot</h3>
+            <p>Free, open-source 2D/3D engine with GDScript.</p>
+          </a>
+          <a
+            href="directory/gamemaker.html"
+            class="tool-card"
+            data-tool
+            data-search="gamemaker friendly 2d game engine with gml and visual scripting. game development"
+          >
+            <h3>GameMaker</h3>
+            <p>Friendly 2D game engine with GML and visual scripting.</p>
+          </a>
+          <a
+            href="directory/rpg-maker.html"
+            class="tool-card"
+            data-tool
+            data-search="rpg maker make jrpgs without code (or with a little). game development"
+          >
+            <h3>RPG Maker</h3>
+            <p>Make JRPGs without code (or with a little).</p>
+          </a>
+          </div>
+        </section>
 
-          <p class="empty-state" data-empty-state>No categories match your search.</p>
-        </div>
+        <section class="category-section" data-category-section>
+          <header class="category-section-head">
+            <h2>Pixel Art &amp; Drawing</h2>
+            <p class="category-blurb">Tablet-first painting and pixel-perfect tools.</p>
+          </header>
+          <div class="tool-grid">
+          <a
+            href="directory/aseprite.html"
+            class="tool-card"
+            data-tool
+            data-search="aseprite the pixel-art editor pretty much everyone uses. pixel art &amp; drawing"
+          >
+            <h3>Aseprite</h3>
+            <p>The pixel-art editor pretty much everyone uses.</p>
+          </a>
+          <a
+            href="directory/krita.html"
+            class="tool-card"
+            data-tool
+            data-search="krita free, open-source painting app for digital artists. pixel art &amp; drawing"
+          >
+            <h3>Krita</h3>
+            <p>Free, open-source painting app for digital artists.</p>
+          </a>
+          <a
+            href="directory/clip-studio-paint.html"
+            class="tool-card"
+            data-tool
+            data-search="clip studio paint industry-standard for comics, manga, and animation. pixel art &amp; drawing"
+          >
+            <h3>Clip Studio Paint</h3>
+            <p>Industry-standard for comics, manga, and animation.</p>
+          </a>
+          <a
+            href="directory/procreate.html"
+            class="tool-card"
+            data-tool
+            data-search="procreate ipad-first painting app with a beautiful brush engine. pixel art &amp; drawing"
+          >
+            <h3>Procreate</h3>
+            <p>iPad-first painting app with a beautiful brush engine.</p>
+          </a>
+          <a
+            href="directory/medibang.html"
+            class="tool-card"
+            data-tool
+            data-search="medibang paint free cross-platform painting app for comics and illustration. pixel art &amp; drawing"
+          >
+            <h3>MediBang Paint</h3>
+            <p>Free cross-platform painting app for comics and illustration.</p>
+          </a>
+          </div>
+        </section>
+
+        <section class="category-section" data-category-section>
+          <header class="category-section-head">
+            <h2>Audio</h2>
+            <p class="category-blurb">DAWs and tools for music and sound.</p>
+          </header>
+          <div class="tool-grid">
+          <a
+            href="directory/ableton-live.html"
+            class="tool-card"
+            data-tool
+            data-search="ableton live performance-first daw for electronic and beyond. audio"
+          >
+            <h3>Ableton Live</h3>
+            <p>Performance-first DAW for electronic and beyond.</p>
+          </a>
+          <a
+            href="directory/fl-studio.html"
+            class="tool-card"
+            data-tool
+            data-search="fl studio pattern-based daw beloved by hip-hop and edm producers. audio"
+          >
+            <h3>FL Studio</h3>
+            <p>Pattern-based DAW beloved by hip-hop and EDM producers.</p>
+          </a>
+          <a
+            href="directory/logic-pro.html"
+            class="tool-card"
+            data-tool
+            data-search="logic pro apple’s pro daw — deep, polished, mac-only. audio"
+          >
+            <h3>Logic Pro</h3>
+            <p>Apple’s pro DAW — deep, polished, Mac-only.</p>
+          </a>
+          <a
+            href="directory/pro-tools.html"
+            class="tool-card"
+            data-tool
+            data-search="pro tools industry-standard daw for studios and post-production. audio"
+          >
+            <h3>Pro Tools</h3>
+            <p>Industry-standard DAW for studios and post-production.</p>
+          </a>
+          <a
+            href="directory/audacity.html"
+            class="tool-card"
+            data-tool
+            data-search="audacity free, simple audio editor and recorder. audio"
+          >
+            <h3>Audacity</h3>
+            <p>Free, simple audio editor and recorder.</p>
+          </a>
+          <a
+            href="directory/reaper.html"
+            class="tool-card"
+            data-tool
+            data-search="reaper lightweight, scriptable, ridiculously affordable daw. audio"
+          >
+            <h3>REAPER</h3>
+            <p>Lightweight, scriptable, ridiculously affordable DAW.</p>
+          </a>
+          </div>
+        </section>
+
+        <section class="category-section" data-category-section>
+          <header class="category-section-head">
+            <h2>Productivity</h2>
+            <p class="category-blurb">Notes, docs, planning, and team workspaces.</p>
+          </header>
+          <div class="tool-grid">
+          <a
+            href="directory/notion.html"
+            class="tool-card"
+            data-tool
+            data-search="notion docs, databases, and wikis in one workspace. productivity"
+          >
+            <h3>Notion</h3>
+            <p>Docs, databases, and wikis in one workspace.</p>
+          </a>
+          <a
+            href="directory/obsidian.html"
+            class="tool-card"
+            data-tool
+            data-search="obsidian local-first markdown notes with backlinks. productivity"
+          >
+            <h3>Obsidian</h3>
+            <p>Local-first markdown notes with backlinks.</p>
+          </a>
+          <a
+            href="directory/airtable.html"
+            class="tool-card"
+            data-tool
+            data-search="airtable spreadsheet-database hybrid for ops and content. productivity"
+          >
+            <h3>Airtable</h3>
+            <p>Spreadsheet-database hybrid for ops and content.</p>
+          </a>
+          <a
+            href="directory/miro.html"
+            class="tool-card"
+            data-tool
+            data-search="miro online whiteboard for workshops and design ops. productivity"
+          >
+            <h3>Miro</h3>
+            <p>Online whiteboard for workshops and design ops.</p>
+          </a>
+          <a
+            href="directory/trello.html"
+            class="tool-card"
+            data-tool
+            data-search="trello the original kanban board — simple and durable. productivity"
+          >
+            <h3>Trello</h3>
+            <p>The original kanban board — simple and durable.</p>
+          </a>
+          </div>
+        </section>
+
+        <section class="category-section" data-category-section>
+          <header class="category-section-head">
+            <h2>Photography</h2>
+            <p class="category-blurb">Editing, organising, and processing images.</p>
+          </header>
+          <div class="tool-grid">
+          <a
+            href="directory/lightroom.html"
+            class="tool-card"
+            data-tool
+            data-search="lightroom adobe’s photo editor and library tool. photography"
+          >
+            <h3>Lightroom</h3>
+            <p>Adobe’s photo editor and library tool.</p>
+          </a>
+          <a
+            href="directory/capture-one.html"
+            class="tool-card"
+            data-tool
+            data-search="capture one pro raw editor beloved by tethered shooters. photography"
+          >
+            <h3>Capture One</h3>
+            <p>Pro RAW editor beloved by tethered shooters.</p>
+          </a>
+          <a
+            href="directory/luminar-neo.html"
+            class="tool-card"
+            data-tool
+            data-search="luminar neo ai-driven photo editor with great one-click looks. photography"
+          >
+            <h3>Luminar Neo</h3>
+            <p>AI-driven photo editor with great one-click looks.</p>
+          </a>
+          <a
+            href="directory/darktable.html"
+            class="tool-card"
+            data-tool
+            data-search="darktable free, open-source raw editor for serious photographers. photography"
+          >
+            <h3>darktable</h3>
+            <p>Free, open-source RAW editor for serious photographers.</p>
+          </a>
+          </div>
+        </section>
+
+        <p class="empty-state" data-empty-state>No tools match your search.</p>
       </div>
     </main>
 
@@ -341,7 +653,7 @@
             </span>
             <span class="brand-name">Guided</span>
           </a>
-          <span class="footer-copy">© 2026 guided.build</span>
+          <span class="footer-copy">© 2026 Guided. All rights reserved.</span>
         </div>
         <nav class="footer-nav" aria-label="Footer">
           <a href="directory.html">Directory</a>
