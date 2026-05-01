@@ -19,4 +19,14 @@ contextBridge.exposeInMainWorld('guided', {
   showPointer: (payload) => ipcRenderer.invoke('pointer:show', payload),
   searchImages: (query) => ipcRenderer.invoke('images:search', query),
   openExternal: (url) => ipcRenderer.invoke('shell:openExternal', url),
+  openPath: (absolutePath) => ipcRenderer.invoke('shell:openPath', absolutePath),
+  getProjectsBase: () => ipcRenderer.invoke('projects:getBase'),
+  chooseProjectsBase: () => ipcRenderer.invoke('projects:chooseBase'),
+  ensureProjectFolder: (projectId) => ipcRenderer.invoke('projects:ensureFolder', projectId),
+  showProjectInFolder: (projectId) => ipcRenderer.invoke('projects:showInFolder', projectId),
+  listProjectFiles: (projectId) => ipcRenderer.invoke('projects:listFiles', projectId),
+  readProjectImage: (projectId, fileName) => ipcRenderer.invoke('projects:readImage', projectId, fileName),
+  saveProjectImage: (projectId, fileName, dataUrl) =>
+    ipcRenderer.invoke('projects:saveImage', projectId, fileName, dataUrl),
+  deleteProjectFolder: (projectId) => ipcRenderer.invoke('projects:deleteFolder', projectId),
 });

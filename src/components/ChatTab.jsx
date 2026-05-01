@@ -25,6 +25,18 @@ import { linkify, resolveLinkUrl } from '../utils/linkify.js';
 
 const VISION_KICKOFF_TEXT = '__VISION_START__';
 
+const IMAGE_ONLY_DEFAULT_PROMPT =
+  'What can you tell me about this image? How does it relate to my project?';
+
+const ALLOWED_IMAGE_TYPES = new Set([
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/gif',
+  'image/webp',
+]);
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
 const ROADMAP_START_FOLLOWUP =
   "Great — let's dive in. What would you like to work on first?";
 
@@ -69,8 +81,11 @@ export default function ChatTab({
   const [sending, setSending] = useState(false);
   const [captureFlash, setCaptureFlash] = useState(false);
   const [chipSelections, setChipSelections] = useState({});
+  const [attachedImage, setAttachedImage] = useState(null);
+  const [attachError, setAttachError] = useState('');
   const scrollRef = useRef(null);
   const flashTimerRef = useRef(null);
+  const fileInputRef = useRef(null);
   const conceptDetectedRef = useRef(onConceptDetected);
   const pointerFiredRef = useRef(onPointerFired);
   const searchResultsRef = useRef(onSearchResults);
@@ -95,6 +110,11 @@ export default function ChatTab({
       if (flashTimerRef.current) clearTimeout(flashTimerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    setAttachedImage(null);
+    setAttachError('');
+  }, [project?.id]);
 
   // Scan finalized assistant messages for CONCEPT tokens and auto-save.
   useEffect(() => {
@@ -279,13 +299,75 @@ export default function ChatTab({
     flashTimerRef.current = setTimeout(() => setCaptureFlash(false), 2000);
   }
 
+  function openFilePicker() {
+    setAttachError('');
+    fileInputRef.current?.click();
+  }
+
+  function handleFileSelect(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+      setAttachError('Only JPG, PNG, GIF, or WEBP images are supported.');
+      return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setAttachError('Image is too large (5MB max).');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const dataUrl = e.target?.result;
+      if (typeof dataUrl !== 'string') {
+        setAttachError('Could not read the image.');
+        return;
+      }
+      setAttachedImage({ dataUrl, name: file.name, size: file.size });
+      setAttachError('');
+    };
+    reader.onerror = () => {
+      setAttachError('Could not read the image.');
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeAttachment() {
+    setAttachedImage(null);
+    setAttachError('');
+  }
+
   async function send(textOverride) {
     const isOverride = typeof textOverride === 'string';
-    const text = (isOverride ? textOverride : draft).trim();
+    const rawText = (isOverride ? textOverride : draft).trim();
+    const hasAttachment = !isOverride && Boolean(attachedImage);
+    const text = rawText || (hasAttachment ? IMAGE_ONLY_DEFAULT_PROMPT : '');
     if (!text || sending) return;
 
     let imageBlock = null;
-    if (shouldCapture(text) && window.guided?.captureScreen) {
+    if (hasAttachment) {
+      const m = /^data:([^;]+);base64,(.+)$/.exec(attachedImage.dataUrl);
+      if (m) {
+        imageBlock = {
+          type: 'image',
+          source: { type: 'base64', media_type: m[1], data: m[2] },
+        };
+      }
+      // Persist to the project's folder on disk (best-effort, non-blocking on failure).
+      if (window.guided?.saveProjectImage) {
+        try {
+          await window.guided.saveProjectImage(
+            project.id,
+            attachedImage.name ?? 'image',
+            attachedImage.dataUrl
+          );
+        } catch {
+          // Disk save failed — still send the API request.
+        }
+      }
+    } else if (shouldCapture(text) && window.guided?.captureScreen) {
       try {
         const result = await window.guided.captureScreen();
         if (result?.ok && result.dataUrl) {
@@ -311,8 +393,12 @@ export default function ChatTab({
       messages: [...p.messages, userMsg, placeholder],
     }));
     if (!isOverride) setDraft('');
+    if (hasAttachment) {
+      setAttachedImage(null);
+      setAttachError('');
+    }
     setSending(true);
-    if (imageBlock) flashCapture();
+    if (imageBlock && !hasAttachment) flashCapture();
 
     // Build API messages — older turns stay text-only, image rides only on the current user turn.
     const apiMessages = messages.map((m) => ({ role: m.role, content: m.text }));
@@ -746,7 +832,60 @@ export default function ChatTab({
         >
           <ScreenVisiblePill />
         </div>
+        {attachedImage && (
+          <div className="mb-1.5 flex items-center gap-2">
+            <div className="relative shrink-0">
+              <img
+                src={attachedImage.dataUrl}
+                alt={attachedImage.name}
+                className="h-12 w-12 rounded-md border border-panel-border object-cover"
+              />
+              <button
+                onClick={removeAttachment}
+                title="Remove image"
+                aria-label="Remove image"
+                className="no-drag absolute -top-1.5 -right-1.5 grid h-4 w-4 place-items-center rounded-full border border-panel-border bg-panel-bg text-panel-muted transition-colors hover:text-panel-text"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="h-2.5 w-2.5"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+            <span className="min-w-0 flex-1 truncate text-[11px] text-panel-muted">
+              {attachedImage.name}
+            </span>
+          </div>
+        )}
+        {attachError && (
+          <div className="mb-1.5 text-[11px] text-red-300">{attachError}</div>
+        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/jpeg,image/png,image/gif,image/webp"
+          onChange={handleFileSelect}
+          className="hidden"
+        />
         <div className="flex items-end gap-2 rounded-lg border border-panel-border bg-panel-bg px-2 py-1.5 focus-within:border-panel-accent/60">
+          <button
+            type="button"
+            onClick={openFilePicker}
+            disabled={sending}
+            title="Attach image"
+            aria-label="Attach image"
+            className="no-drag grid h-7 w-7 shrink-0 place-items-center rounded text-panel-muted transition-colors hover:bg-panel-surface hover:text-panel-text disabled:opacity-40"
+          >
+            <PaperclipIcon />
+          </button>
           <textarea
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
@@ -758,7 +897,7 @@ export default function ChatTab({
           />
           <button
             onClick={() => send()}
-            disabled={!draft.trim() || sending}
+            disabled={(!draft.trim() && !attachedImage) || sending}
             className="rounded-md bg-panel-accent/90 px-2.5 py-1 text-xs font-medium text-white shadow-sm transition-opacity hover:bg-panel-accent disabled:opacity-40"
           >
             {sending ? '…' : 'Send'}
@@ -820,6 +959,22 @@ function ActiveAppPill({ name }) {
       <span className="block h-1.5 w-1.5 rounded-full bg-emerald-400/80 animate-pulse" />
       <span className="max-w-[90px] truncate">{name}</span>
     </div>
+  );
+}
+
+function PaperclipIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-4 w-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" />
+    </svg>
   );
 }
 

@@ -11,6 +11,7 @@ export default function SettingsTab({
   const [savedFlash, setSavedFlash] = useState(false);
   const [launchOnLogin, setLaunchOnLogin] = useState(false);
   const [startupBusy, setStartupBusy] = useState(false);
+  const [projectsBase, setProjectsBase] = useState('');
 
   useEffect(() => {
     setDraft(apiKey);
@@ -23,10 +24,21 @@ export default function SettingsTab({
         if (!cancelled) setLaunchOnLogin(Boolean(value));
       });
     }
+    if (window.guided?.getProjectsBase) {
+      window.guided.getProjectsBase().then((value) => {
+        if (!cancelled) setProjectsBase(value ?? '');
+      });
+    }
     return () => {
       cancelled = true;
     };
   }, []);
+
+  async function changeProjectsBase() {
+    if (!window.guided?.chooseProjectsBase) return;
+    const next = await window.guided.chooseProjectsBase();
+    if (next) setProjectsBase(next);
+  }
 
   async function toggleLaunchOnLogin() {
     if (startupBusy || !window.guided?.setLaunchAtStartup) return;
@@ -97,6 +109,23 @@ export default function SettingsTab({
           />
           <span className="text-xs text-panel-text">Launch Guided when I log in.</span>
         </label>
+      </Section>
+
+      <Section title="Project Location">
+        <p className="break-all rounded-md border border-panel-border bg-panel-bg px-2.5 py-1.5 font-mono text-[11px] leading-snug text-panel-text">
+          {projectsBase || 'Loading…'}
+        </p>
+        <div className="mt-2 flex items-center gap-2">
+          <button
+            onClick={changeProjectsBase}
+            className="rounded-md border border-panel-border bg-panel-bg px-2.5 py-1 text-xs text-panel-text transition-colors hover:border-panel-accent/60"
+          >
+            Change…
+          </button>
+        </div>
+        <p className="mt-2 text-[11px] leading-snug text-panel-muted">
+          Where new project folders are created. Existing projects stay where they are.
+        </p>
       </Section>
 
       <Section title="Keyboard">

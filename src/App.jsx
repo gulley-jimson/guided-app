@@ -81,6 +81,31 @@ export default function App() {
     setProjects((prev) => [p, ...prev]);
     setActiveId(p.id);
     setActiveTab('Chat');
+    if (window.guided?.ensureProjectFolder) {
+      window.guided.ensureProjectFolder(p.id).catch(() => {});
+    }
+  }
+
+  function renameProject(id, nextName) {
+    const trimmed = String(nextName ?? '').trim();
+    if (!trimmed) return;
+    setProjects((prev) =>
+      prev.map((p) =>
+        p.id === id ? { ...p, name: trimmed, updatedAt: Date.now() } : p
+      )
+    );
+  }
+
+  async function deleteProject(id) {
+    setProjects((prev) => prev.filter((p) => p.id !== id));
+    if (activeId === id) {
+      setActiveId(null);
+    }
+    if (window.guided?.deleteProjectFolder) {
+      try {
+        await window.guided.deleteProjectFolder(id);
+      } catch {}
+    }
   }
 
   function detectedConcept(projectId, messageId, concept) {
@@ -300,6 +325,8 @@ export default function App() {
                 activeId={activeId}
                 onSelect={selectProject}
                 onCreate={newProject}
+                onRename={renameProject}
+                onDelete={deleteProject}
               />
             )}
             {activeTab === 'Roadmap' && (

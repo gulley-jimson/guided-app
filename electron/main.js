@@ -1,4 +1,4 @@
-const { app, BrowserWindow, screen, Tray, Menu, nativeImage, ipcMain, desktopCapturer, globalShortcut, shell } = require('electron');
+const { app, BrowserWindow, screen, Tray, Menu, nativeImage, ipcMain, desktopCapturer, globalShortcut, shell, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const zlib = require('zlib');
@@ -190,6 +190,212 @@ ipcMain.handle('window:always-on-top:set', (_event, enabled) => {
 
 ipcMain.handle('app:get', () => lastActiveApp);
 
+// ---- Settings + project folders ----
+
+const SETTINGS_FILE = path.join(app.getPath('userData'), 'settings.json');
+let projectsBasePath = path.join(app.getPath('userData'), 'projects');
+let settingsLoaded = false;
+
+const PROJECT_ID_RE = /^[a-z0-9_-]+$/i;
+const SAFE_FILENAME_RE = /^[^\\/:*?"<>|]+$/;
+const MIME_TO_EXT = {
+  'image/jpeg': 'jpg',
+  'image/jpg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+};
+const EXT_TO_MIME = {
+  jpg: 'image/jpeg',
+  jpeg: 'image/jpeg',
+  png: 'image/png',
+  gif: 'image/gif',
+  webp: 'image/webp',
+};
+
+function loadSettings() {
+  if (settingsLoaded) return;
+  settingsLoaded = true;
+  try {
+    const raw = fs.readFileSync(SETTINGS_FILE, 'utf8');
+    const data = JSON.parse(raw);
+    if (typeof data.projectsBasePath === 'string' && data.projectsBasePath.trim()) {
+      projectsBasePath = data.projectsBasePath;
+    }
+  } catch {}
+}
+
+function saveSettings() {
+  try {
+    fs.mkdirSync(path.dirname(SETTINGS_FILE), { recursive: true });
+    fs.writeFileSync(
+      SETTINGS_FILE,
+      JSON.stringify({ projectsBasePath }, null, 2),
+      'utf8'
+    );
+  } catch {}
+}
+
+function projectFolderPath(projectId) {
+  if (typeof projectId !== 'string' || !PROJECT_ID_RE.test(projectId)) {
+    throw new Error('Invalid project id');
+  }
+  return path.join(projectsBasePath, projectId);
+}
+
+function attachmentsFolderPath(projectId) {
+  return path.join(projectFolderPath(projectId), 'attachments');
+}
+
+function sanitizeBaseName(name) {
+  if (typeof name !== 'string') return '';
+  const stem = name.replace(/\.[^.]+$/, '');
+  return stem.replace(/[^a-zA-Z0-9._-]/g, '-').replace(/^-+|-+$/g, '').slice(0, 60) || '';
+}
+
+ipcMain.handle('projects:getBase', () => {
+  loadSettings();
+  return projectsBasePath;
+});
+
+ipcMain.handle('projects:chooseBase', async () => {
+  if (!win || win.isDestroyed()) return null;
+  loadSettings();
+  try {
+    fs.mkdirSync(projectsBasePath, { recursive: true });
+  } catch {}
+  const result = await dialog.showOpenDialog(win, {
+    title: 'Choose where to save Guided projects',
+    defaultPath: projectsBasePath,
+    properties: ['openDirectory', 'createDirectory'],
+  });
+  if (result.canceled || !result.filePaths?.[0]) return null;
+  projectsBasePath = result.filePaths[0];
+  saveSettings();
+  return projectsBasePath;
+});
+
+ipcMain.handle('projects:ensureFolder', (_event, projectId) => {
+  loadSettings();
+  try {
+    const folder = projectFolderPath(projectId);
+    fs.mkdirSync(folder, { recursive: true });
+    fs.mkdirSync(path.join(folder, 'attachments'), { recursive: true });
+    return folder;
+  } catch {
+    return null;
+  }
+});
+
+ipcMain.handle('projects:showInFolder', async (_event, projectId) => {
+  loadSettings();
+  try {
+    const folder = projectFolderPath(projectId);
+    fs.mkdirSync(folder, { recursive: true });
+    await shell.openPath(folder);
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+ipcMain.handle('projects:listFiles', async (_event, projectId) => {
+  loadSettings();
+  try {
+    const folder = attachmentsFolderPath(projectId);
+    if (!fs.existsSync(folder)) return [];
+    const items = fs.readdirSync(folder, { withFileTypes: true });
+    return items
+      .filter((it) => it.isFile())
+      .map((it) => {
+        const full = path.join(folder, it.name);
+        let stat;
+        try {
+          stat = fs.statSync(full);
+        } catch {
+          return null;
+        }
+        return {
+          name: it.name,
+          path: full,
+          size: stat.size,
+          mtime: stat.mtimeMs,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.mtime - a.mtime);
+  } catch {
+    return [];
+  }
+});
+
+ipcMain.handle('projects:readImage', async (_event, projectId, fileName) => {
+  loadSettings();
+  try {
+    if (typeof fileName !== 'string' || !SAFE_FILENAME_RE.test(fileName) || fileName.includes('..')) {
+      return null;
+    }
+    const folder = attachmentsFolderPath(projectId);
+    const fullPath = path.join(folder, fileName);
+    const resolved = path.resolve(fullPath);
+    const expectedPrefix = path.resolve(folder);
+    if (!resolved.startsWith(expectedPrefix + path.sep) && resolved !== expectedPrefix) {
+      return null;
+    }
+    if (!fs.existsSync(resolved)) return null;
+    const ext = path.extname(resolved).slice(1).toLowerCase();
+    const mime = EXT_TO_MIME[ext];
+    if (!mime) return null;
+    const data = fs.readFileSync(resolved).toString('base64');
+    return `data:${mime};base64,${data}`;
+  } catch {
+    return null;
+  }
+});
+
+ipcMain.handle('projects:saveImage', async (_event, projectId, fileName, dataUrl) => {
+  loadSettings();
+  try {
+    const folder = attachmentsFolderPath(projectId);
+    fs.mkdirSync(folder, { recursive: true });
+    const m = /^data:([^;]+);base64,(.+)$/.exec(dataUrl ?? '');
+    if (!m) return null;
+    const mime = m[1].toLowerCase();
+    const buffer = Buffer.from(m[2], 'base64');
+    const safeBase = sanitizeBaseName(fileName) || 'image';
+    const ext =
+      MIME_TO_EXT[mime] || path.extname(fileName ?? '').slice(1).toLowerCase() || 'png';
+    const finalName = `${Date.now()}-${safeBase}.${ext}`;
+    const fullPath = path.join(folder, finalName);
+    fs.writeFileSync(fullPath, buffer);
+    return { fileName: finalName, path: fullPath, size: buffer.length };
+  } catch {
+    return null;
+  }
+});
+
+ipcMain.handle('projects:deleteFolder', async (_event, projectId) => {
+  loadSettings();
+  try {
+    const folder = projectFolderPath(projectId);
+    if (!fs.existsSync(folder)) return true;
+    fs.rmSync(folder, { recursive: true, force: true });
+    return true;
+  } catch {
+    return false;
+  }
+});
+
+ipcMain.handle('shell:openPath', async (_event, absolutePath) => {
+  try {
+    if (typeof absolutePath !== 'string' || !absolutePath.trim()) return false;
+    const result = await shell.openPath(absolutePath);
+    return result === '';
+  } catch {
+    return false;
+  }
+});
+
 ipcMain.handle('images:search', async (_event, query) => {
   return searchImagesViaDDG(String(query ?? ''), 3);
 });
@@ -297,6 +503,7 @@ ipcMain.handle('env:saveKey', async (_event, value) => {
 });
 
 app.whenReady().then(() => {
+  loadSettings();
   createWindow();
   createTray();
   startActiveAppPolling();
