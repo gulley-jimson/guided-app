@@ -194,8 +194,26 @@ export default function SettingsTab({
         )}
       </Section>
 
-      {!subscriptionActive && (
-        <Section title="API Key">
+      {subscriptionActive ? (
+        <section>
+          <p className="text-[11px] leading-snug text-panel-muted">
+            API key managed by your Guided subscription.
+          </p>
+        </section>
+      ) : (
+        <section>
+          <div className="mb-2 flex items-baseline justify-between gap-2">
+            <h2 className="text-[10px] uppercase tracking-wider text-panel-muted">
+              Claude API Key
+            </h2>
+            <button
+              type="button"
+              onClick={() => openExternal('https://console.anthropic.com/')}
+              className="text-[10px] uppercase tracking-wider text-panel-accent hover:text-panel-text"
+            >
+              Get yours →
+            </button>
+          </div>
           <input
             type="password"
             value={draft}
@@ -227,7 +245,7 @@ export default function SettingsTab({
             Your key is stored locally and never shared.
             {usingEnvKey && ' Currently falling back to the key in .env.'}
           </p>
-        </Section>
+        </section>
       )}
 
       <Section title="Theme">

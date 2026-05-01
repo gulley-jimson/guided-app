@@ -85,6 +85,7 @@ export default function ChatTab({
   const [chipSelections, setChipSelections] = useState({});
   const [attachedImage, setAttachedImage] = useState(null);
   const [attachError, setAttachError] = useState('');
+  const [showScrollBtn, setShowScrollBtn] = useState(false);
   const scrollRef = useRef(null);
   const flashTimerRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -106,6 +107,17 @@ export default function ChatTab({
     const el = scrollRef.current;
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, project?.id]);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const handleScroll = () => {
+      const dist = el.scrollHeight - el.scrollTop - el.clientHeight;
+      setShowScrollBtn(dist > 80);
+    };
+    el.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -359,7 +371,6 @@ export default function ChatTab({
           source: { type: 'base64', media_type: m[1], data: m[2] },
         };
       }
-      // Persist to the project's folder on disk (best-effort, non-blocking on failure).
       if (window.guided?.saveProjectImage) {
         try {
           await window.guided.saveProjectImage(
@@ -404,7 +415,6 @@ export default function ChatTab({
     setSending(true);
     if (imageBlock && !hasAttachment) flashCapture();
 
-    // Build API messages — older turns stay text-only, image rides only on the current user turn.
     const apiMessages = messages.map((m) => ({ role: m.role, content: m.text }));
     apiMessages.push(
       imageBlock
@@ -626,210 +636,231 @@ export default function ChatTab({
     }));
   }
 
+  function scrollToBottom() {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+    setShowScrollBtn(false);
+  }
+
   return (
     <div className="flex h-full flex-col">
       <ProjectChatHeader project={project} onBack={onBack} activeApp={activeApp} />
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-3 space-y-2">
-        {!apiKey && (
-          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
-            No API key set.{' '}
-            <button
-              onClick={onOpenSettings}
-              className="underline underline-offset-2 hover:text-amber-100"
-            >
-              Open Settings
-            </button>{' '}
-            to add one.
-          </div>
-        )}
-        {messages.length === 0 && project.visionComplete && (
-          <Message
-            role="assistant"
-            text="What are you working on? Tell me as much or as little as you like — we'll figure out the rest together."
-          />
-        )}
-        {messages.map((m, i) => {
-          if (m.hidden) return null;
-          if (m.role !== 'assistant') {
-            return (
-              <Message
-                key={m.id}
-                role={m.role}
-                text={m.text}
-                streaming={m.streaming}
-                error={m.error}
-              />
-            );
-          }
-
-          const isLast = i === messages.length - 1;
-
-          if (m.error) {
-            return (
-              <ErrorBubble
-                key={m.id}
-                kind={m.errorKind ?? 'generic'}
-                canRetry={isLast && !sending}
-                onRetry={() => retry(m.id)}
-                onOpenSettings={onOpenSettings}
-              />
-            );
-          }
-
-          const offer = parseOffer(m.text);
-
-          if (offer.isOffer) {
-            const showOfferChips = isLast && !m.streaming && !m.error;
-            return (
-              <div key={m.id}>
+      <div className="relative flex-1 min-h-0">
+        <div ref={scrollRef} className="h-full overflow-y-auto px-3 py-3 space-y-2">
+          {!apiKey && (
+            <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+              No API key set.{' '}
+              <button
+                onClick={onOpenSettings}
+                className="underline underline-offset-2 hover:text-amber-100"
+              >
+                Open Settings
+              </button>{' '}
+              to add one.
+            </div>
+          )}
+          {messages.length === 0 && project.visionComplete && (
+            <Message
+              role="assistant"
+              text="What are you working on? Tell me as much or as little as you like — we'll figure out the rest together."
+            />
+          )}
+          {messages.map((m, i) => {
+            if (m.hidden) return null;
+            if (m.role !== 'assistant') {
+              return (
                 <Message
-                  role="assistant"
-                  text={offer.displayText}
-                  streaming={m.streaming}
-                  error={m.error}
-                />
-                {showOfferChips && (
-                  <div className="mt-1.5 flex flex-wrap gap-1.5">
-                    <button
-                      onClick={acceptOffer}
-                      disabled={sending}
-                      className="no-drag rounded-full border border-panel-accent/60 bg-panel-accent/15 px-2.5 py-1 text-[11px] font-medium text-panel-text transition-colors hover:bg-panel-accent/25 disabled:opacity-40"
-                    >
-                      {ROADMAP_OFFER_ACCEPT_LABEL}
-                    </button>
-                    <button
-                      onClick={declineOffer}
-                      disabled={sending}
-                      className="no-drag rounded-full border border-panel-border bg-panel-bg/60 px-2.5 py-1 text-[11px] text-panel-text transition-colors hover:border-panel-accent/60 hover:bg-panel-surface disabled:opacity-40"
-                    >
-                      {ROADMAP_OFFER_DECLINE_LABEL}
-                    </button>
-                  </div>
-                )}
-              </div>
-            );
-          }
-
-          if (offer.isPartial) {
-            return (
-              <Message key={m.id} role="assistant" text="" streaming={true} />
-            );
-          }
-
-          if (m.kind === 'roadmap-ready') {
-            const showRoadmapPrompt =
-              isLast && !m.streaming && !m.error && !m.roadmapPromptResolved;
-            return (
-              <div key={m.id}>
-                <Message
-                  role="assistant"
+                  key={m.id}
+                  role={m.role}
                   text={m.text}
                   streaming={m.streaming}
                   error={m.error}
                 />
-                {showRoadmapPrompt && (
+              );
+            }
+
+            const isLast = i === messages.length - 1;
+
+            if (m.error) {
+              return (
+                <ErrorBubble
+                  key={m.id}
+                  kind={m.errorKind ?? 'generic'}
+                  canRetry={isLast && !sending}
+                  onRetry={() => retry(m.id)}
+                  onOpenSettings={onOpenSettings}
+                />
+              );
+            }
+
+            const offer = parseOffer(m.text);
+
+            if (offer.isOffer) {
+              const showOfferChips = isLast && !m.streaming && !m.error;
+              return (
+                <div key={m.id}>
+                  <Message
+                    role="assistant"
+                    text={offer.displayText}
+                    streaming={m.streaming}
+                    error={m.error}
+                  />
+                  {showOfferChips && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      <button
+                        onClick={acceptOffer}
+                        disabled={sending}
+                        className="no-drag rounded-full border border-panel-accent/60 bg-panel-accent/15 px-2.5 py-1 text-[11px] font-medium text-panel-text transition-colors hover:bg-panel-accent/25 disabled:opacity-40"
+                      >
+                        {ROADMAP_OFFER_ACCEPT_LABEL}
+                      </button>
+                      <button
+                        onClick={declineOffer}
+                        disabled={sending}
+                        className="no-drag rounded-full border border-panel-border bg-panel-bg/60 px-2.5 py-1 text-[11px] text-panel-text transition-colors hover:border-panel-accent/60 hover:bg-panel-surface disabled:opacity-40"
+                      >
+                        {ROADMAP_OFFER_DECLINE_LABEL}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            if (offer.isPartial) {
+              return (
+                <Message key={m.id} role="assistant" text="" streaming={true} />
+              );
+            }
+
+            if (m.kind === 'roadmap-ready') {
+              const showRoadmapPrompt =
+                isLast && !m.streaming && !m.error && !m.roadmapPromptResolved;
+              return (
+                <div key={m.id}>
+                  <Message
+                    role="assistant"
+                    text={m.text}
+                    streaming={m.streaming}
+                    error={m.error}
+                  />
+                  {showRoadmapPrompt && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5">
+                      <button
+                        onClick={() => startFromRoadmap(m.id)}
+                        disabled={sending}
+                        className="no-drag rounded-full border border-panel-accent/60 bg-panel-accent/15 px-2.5 py-1 text-[11px] font-medium text-panel-text transition-colors hover:bg-panel-accent/25 disabled:opacity-40"
+                      >
+                        Let&apos;s get started
+                      </button>
+                      <button
+                        onClick={() => dismissRoadmapPrompt(m.id)}
+                        disabled={sending}
+                        className="no-drag rounded-full border border-panel-border bg-panel-bg/60 px-2.5 py-1 text-[11px] text-panel-text transition-colors hover:border-panel-accent/60 hover:bg-panel-surface disabled:opacity-40"
+                      >
+                        Not right now
+                      </button>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            const { hasNudge, displayText: nudgeStripped } = splitNudge(m.text);
+            const { displayText: pointerStripped } = parsePointer(nudgeStripped);
+            const { displayText: searchStripped } = parseSearchImage(pointerStripped);
+            const { displayText: buildStripped, hasBuildRoadmap } =
+              parseBuildRoadmap(searchStripped);
+            const { displayText: conceptStripped } = parseConcept(buildStripped);
+            const { displayText, chips, chipsMulti } = splitChips(conceptStripped);
+            const searchImages = Array.isArray(m.searchImages) ? m.searchImages : null;
+            const showBuildRoadmap =
+              hasBuildRoadmap &&
+              isLast &&
+              !m.streaming &&
+              !m.error &&
+              !m.buildRoadmapClicked;
+            const showChips =
+              isLast &&
+              !m.streaming &&
+              !m.error &&
+              chips &&
+              chips.length > 0 &&
+              !showBuildRoadmap;
+            const activePhase = project.roadmap?.phases?.find(
+              (ph) => ph.status === 'active'
+            );
+            const showNudge =
+              hasNudge &&
+              isLast &&
+              !m.streaming &&
+              !m.error &&
+              !m.nudgeDismissed &&
+              Boolean(activePhase);
+
+            return (
+              <div key={m.id}>
+                <Message
+                  role="assistant"
+                  text={displayText}
+                  streaming={m.streaming}
+                  error={m.error}
+                />
+                {searchImages && searchImages.length > 0 && (
+                  <ImageThumbnailRow images={searchImages} />
+                )}
+                {showNudge && (
+                  <NudgePrompt
+                    onComplete={() => completePhaseFromNudge(m.id, activePhase.id)}
+                    onDismiss={() => dismissNudge(m.id)}
+                  />
+                )}
+                {showBuildRoadmap && (
                   <div className="mt-1.5 flex flex-wrap gap-1.5">
                     <button
-                      onClick={() => startFromRoadmap(m.id)}
+                      onClick={() => buildRoadmapFromVision(m.id)}
                       disabled={sending}
-                      className="no-drag rounded-full border border-panel-accent/60 bg-panel-accent/15 px-2.5 py-1 text-[11px] font-medium text-panel-text transition-colors hover:bg-panel-accent/25 disabled:opacity-40"
+                      className="no-drag rounded-full border border-panel-accent/60 bg-panel-accent/15 px-3 py-1 text-[11px] font-medium text-panel-text transition-colors hover:bg-panel-accent/25 disabled:opacity-40"
                     >
-                      Let&apos;s get started
+                      Build my roadmap →
                     </button>
                     <button
-                      onClick={() => dismissRoadmapPrompt(m.id)}
+                      onClick={() => keepExploringIdea(m.id)}
                       disabled={sending}
-                      className="no-drag rounded-full border border-panel-border bg-panel-bg/60 px-2.5 py-1 text-[11px] text-panel-text transition-colors hover:border-panel-accent/60 hover:bg-panel-surface disabled:opacity-40"
+                      className="no-drag rounded-full border border-panel-border bg-panel-bg/60 px-3 py-1 text-[11px] text-panel-text transition-colors hover:border-panel-accent/60 hover:bg-panel-surface disabled:opacity-40"
                     >
-                      Not right now
+                      Keep working through the idea
                     </button>
                   </div>
                 )}
+                {showChips && (
+                  <ChipBar
+                    chips={chips}
+                    multi={chipsMulti}
+                    selected={chipSelections[m.id] ?? []}
+                    sending={sending}
+                    onSingle={(chip) => send(chip)}
+                    onToggle={(chip) => toggleChipSelection(m.id, chip)}
+                    onContinue={() => continueMultiChip(m.id)}
+                  />
+                )}
               </div>
             );
-          }
-
-          const { hasNudge, displayText: nudgeStripped } = splitNudge(m.text);
-          const { displayText: pointerStripped } = parsePointer(nudgeStripped);
-          const { displayText: searchStripped } = parseSearchImage(pointerStripped);
-          const { displayText: buildStripped, hasBuildRoadmap } =
-            parseBuildRoadmap(searchStripped);
-          const { displayText: conceptStripped } = parseConcept(buildStripped);
-          const { displayText, chips, chipsMulti } = splitChips(conceptStripped);
-          const searchImages = Array.isArray(m.searchImages) ? m.searchImages : null;
-          const showBuildRoadmap =
-            hasBuildRoadmap &&
-            isLast &&
-            !m.streaming &&
-            !m.error &&
-            !m.buildRoadmapClicked;
-          const showChips =
-            isLast &&
-            !m.streaming &&
-            !m.error &&
-            chips &&
-            chips.length > 0 &&
-            !showBuildRoadmap;
-          const activePhase = project.roadmap?.phases?.find(
-            (ph) => ph.status === 'active'
-          );
-          const showNudge =
-            hasNudge &&
-            isLast &&
-            !m.streaming &&
-            !m.error &&
-            !m.nudgeDismissed &&
-            Boolean(activePhase);
-
-          return (
-            <div key={m.id}>
-              <Message
-                role="assistant"
-                text={displayText}
-                streaming={m.streaming}
-                error={m.error}
-              />
-              {searchImages && searchImages.length > 0 && (
-                <ImageThumbnailRow images={searchImages} />
-              )}
-              {showNudge && (
-                <NudgePrompt
-                  onComplete={() => completePhaseFromNudge(m.id, activePhase.id)}
-                  onDismiss={() => dismissNudge(m.id)}
-                />
-              )}
-              {showBuildRoadmap && (
-                <div className="mt-1.5 flex flex-wrap gap-1.5">
-                  <button
-                    onClick={() => buildRoadmapFromVision(m.id)}
-                    disabled={sending}
-                    className="no-drag rounded-full border border-panel-accent/60 bg-panel-accent/15 px-3 py-1 text-[11px] font-medium text-panel-text transition-colors hover:bg-panel-accent/25 disabled:opacity-40"
-                  >
-                    Build my roadmap →
-                  </button>
-                  <button
-                    onClick={() => keepExploringIdea(m.id)}
-                    disabled={sending}
-                    className="no-drag rounded-full border border-panel-border bg-panel-bg/60 px-3 py-1 text-[11px] text-panel-text transition-colors hover:border-panel-accent/60 hover:bg-panel-surface disabled:opacity-40"
-                  >
-                    Keep working through the idea
-                  </button>
-                </div>
-              )}
-              {showChips && (
-                <ChipBar
-                  chips={chips}
-                  multi={chipsMulti}
-                  selected={chipSelections[m.id] ?? []}
-                  sending={sending}
-                  onSingle={(chip) => send(chip)}
-                  onToggle={(chip) => toggleChipSelection(m.id, chip)}
-                  onContinue={() => continueMultiChip(m.id)}
-                />
-              )}
-            </div>
-          );
-        })}
+          })}
+        </div>
+        {showScrollBtn && (
+          <button
+            onClick={scrollToBottom}
+            className="no-drag absolute bottom-2 right-3 z-10 grid h-7 w-7 place-items-center rounded-full border border-panel-border bg-panel-surface shadow-lg text-panel-muted transition-colors hover:text-panel-text"
+            title="Scroll to bottom"
+            aria-label="Scroll to bottom"
+          >
+            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <polyline points="19 12 12 19 5 12" />
+            </svg>
+          </button>
+        )}
       </div>
       <div className="no-drag border-t border-panel-border bg-panel-surface/40 p-2">
         <div

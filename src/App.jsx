@@ -49,6 +49,9 @@ export default function App() {
 
   // Unified auth — deep-link wins when present (it's the explicit user intent
   // from the browser sign-in flow). Embedded Clerk is the fallback path.
+  // `plan` is sourced from the deep-link payload first, then the locally
+  // persisted plan from the verify effect, so consumers can check auth.plan
+  // without separately threading subscription state.
   const auth = useMemo(() => {
     if (deepLink.isSignedIn) {
       return {
@@ -57,6 +60,7 @@ export default function App() {
         userId: deepLink.userId,
         email: deepLink.email,
         getToken: deepLink.getToken,
+        plan: deepLink.plan ?? subscriptionPlan ?? null,
         source: 'deep-link',
       };
     }
@@ -66,6 +70,7 @@ export default function App() {
       userId: clerk.userId,
       email: clerk.email,
       getToken: clerk.getToken,
+      plan: clerk.isSignedIn ? subscriptionPlan ?? null : null,
       source: 'clerk',
     };
   }, [
@@ -73,11 +78,13 @@ export default function App() {
     deepLink.userId,
     deepLink.email,
     deepLink.getToken,
+    deepLink.plan,
     clerk.available,
     clerk.isSignedIn,
     clerk.userId,
     clerk.email,
     clerk.getToken,
+    subscriptionPlan,
   ]);
 
   const apiKey = storedKey || ENV_API_KEY;
@@ -463,7 +470,10 @@ export default function App() {
                 theme={theme}
                 onThemeChange={setTheme}
                 clerk={auth}
-                subscriptionActive={subscriptionActive}
+                subscriptionActive={
+                  Boolean(auth?.plan) ||
+                  (chatMode === 'subscription' && auth.isSignedIn)
+                }
                 subscriptionPlan={subscriptionPlan}
                 onSubscriptionStatusChange={applySubscriptionUpdate}
                 onSignOutGuided={signOutGuidedAccount}
