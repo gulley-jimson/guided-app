@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy Policy — Guided</title>
+    <meta
+      name="description"
+      content="What Guided collects, what we don't, how we use it, and the third-party services involved."
+    />
+    <meta name="theme-color" content="#0b0d10" />
+    <style>
+      html.is-locked body > *:not(#gate-overlay) { display: none !important; }
+      #gate-overlay {
+        position: fixed; inset: 0; z-index: 999999;
+        background: #0f0f13;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        color: #e6e8eb;
+      }
+      #gate-overlay .gate-card {
+        width: 100%; max-width: 360px;
+        padding: 32px;
+        background: #15181d;
+        border: 1px solid #23272e;
+        border-radius: 14px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+      }
+      #gate-overlay .gate-logo {
+        display: flex; align-items: center; justify-content: center;
+        gap: 10px; margin-bottom: 24px;
+      }
+      #gate-overlay .gate-mark {
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #a78bfa, #6366f1);
+        display: grid; place-items: center;
+        box-shadow: 0 6px 20px rgba(167, 139, 250, 0.35);
+      }
+      #gate-overlay .gate-mark svg { width: 20px; height: 20px; color: #fff; }
+      #gate-overlay .gate-name {
+        font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+      }
+      #gate-overlay input {
+        width: 100%; box-sizing: border-box;
+        padding: 12px 14px;
+        background: #0b0d10;
+        border: 1px solid #2f3441;
+        border-radius: 8px;
+        color: #e6e8eb;
+        font-size: 14px; outline: none;
+        margin-bottom: 12px;
+      }
+      #gate-overlay input:focus { border-color: #a78bfa; }
+      #gate-overlay button {
+        width: 100%; padding: 12px;
+        background: #a78bfa; color: #0b0d10;
+        border: none; border-radius: 8px;
+        font-size: 14px; font-weight: 600; cursor: pointer;
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      #gate-overlay button:hover { background: #8b5cf6; color: #fff; }
+      @keyframes gateShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-8px); }
+        40%, 80% { transform: translateX(8px); }
+      }
+      #gate-overlay .gate-card.shake {
+        animation: gateShake 0.4s ease-in-out;
+        border-color: #f87171;
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          if (sessionStorage.getItem('guided.unlocked') === 'true') return;
+        } catch (e) {}
+        document.documentElement.classList.add('is-locked');
+
+        function build() {
+          var overlay = document.createElement('div');
+          overlay.id = 'gate-overlay';
+          overlay.innerHTML =
+            '<form class="gate-card" autocomplete="off">' +
+            '<div class="gate-logo">' +
+            '<span class="gate-mark">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+            '<circle cx="12" cy="12" r="3" />' +
+            '<path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />' +
+            '</svg>' +
+            '</span>' +
+            '<span class="gate-name">Guided</span>' +
+            '</div>' +
+            '<input type="password" name="p" placeholder="Password" autocomplete="off" autofocus />' +
+            '<button type="submit">Enter</button>' +
+            '</form>';
+          document.body.insertBefore(overlay, document.body.firstChild);
+          var card = overlay.querySelector('.gate-card');
+          var form = overlay.querySelector('form');
+          var input = overlay.querySelector('input');
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (input.value === 'gulley_guided2026') {
+              try { sessionStorage.setItem('guided.unlocked', 'true'); } catch (err) {}
+              document.documentElement.classList.remove('is-locked');
+              overlay.remove();
+            } else {
+              card.classList.remove('shake');
+              void card.offsetWidth;
+              card.classList.add('shake');
+              input.value = '';
+              input.focus();
+            }
+          });
+          setTimeout(function () { input.focus(); }, 0);
+        }
+
+        if (document.body) build();
+        else document.addEventListener('DOMContentLoaded', build, { once: true });
+      })();
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="container">
+        <a href="index.html" class="brand" aria-label="Guided home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
+            </svg>
+          </span>
+          <span class="brand-name">Guided</span>
+        </a>
+        <nav class="site-nav" aria-label="Primary">
+          <a href="directory.html">Directory</a>
+          <a href="index.html#download" class="nav-cta">Download</a>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <section>
+        <div class="container">
+          <header class="section-head">
+            <span class="section-eyebrow">Legal</span>
+            <h1 class="section-title">Privacy Policy</h1>
+            <p class="section-lede">Last updated May 2026.</p>
+          </header>
+
+          <div class="legal-content">
+            <h2>Information we collect</h2>
+            <p>
+              When you create an account, we collect your <strong>name and email</strong>
+              through <a href="https://clerk.com" target="_blank" rel="noopener">Clerk</a>,
+              our authentication provider.
+            </p>
+            <p>
+              <strong>Payment information</strong> is processed by
+              <a href="https://stripe.com" target="_blank" rel="noopener">Stripe</a>.
+              We never see or store your card details ourselves.
+            </p>
+            <p>
+              While the app is running, Guided detects which
+              <strong>software application is currently active on your screen</strong>
+              so it can teach the right tool. This is processed locally on your device,
+              and the application name is sent to the Anthropic Claude API as part of
+              your request context.
+            </p>
+            <p>
+              <strong>Chat messages</strong> you send through the app are transmitted
+              to the Claude API to generate responses.
+            </p>
+
+            <h2>Information we do NOT collect</h2>
+            <p>We do not use:</p>
+            <ul>
+              <li>Advertising trackers</li>
+              <li>Facebook Pixel</li>
+              <li>Google Analytics</li>
+              <li>Browsing history</li>
+            </ul>
+
+            <h2>How we use your information</h2>
+            <p>We use the information we collect to:</p>
+            <ul>
+              <li>Provide and operate the Guided service</li>
+              <li>Process subscription payments</li>
+              <li>Send transactional, account-related emails</li>
+            </ul>
+
+            <h2>Third-party services</h2>
+            <p>Guided relies on the following third-party services:</p>
+            <ul>
+              <li><a href="https://clerk.com" target="_blank" rel="noopener">Clerk</a> — authentication</li>
+              <li><a href="https://stripe.com" target="_blank" rel="noopener">Stripe</a> — payment processing</li>
+              <li>Vercel — website hosting</li>
+              <li>Anthropic Claude API — AI responses</li>
+            </ul>
+
+            <h2>Data storage</h2>
+            <p>
+              Your chat history and project data are stored
+              <strong>locally on your device</strong>, not on our servers.
+            </p>
+
+            <h2>Your rights</h2>
+            <p>
+              You may request access to, correction of, or deletion of your personal
+              data by emailing
+              <a href="mailto:support@guided.build">support@guided.build</a>.
+            </p>
+
+            <h2>Contact</h2>
+            <p>
+              Questions about this policy? Email
+              <a href="mailto:support@guided.build">support@guided.build</a>.
+            </p>
+
+            <h2>Governing law</h2>
+            <p>This policy is governed by the laws of the United States.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-left">
+          <a href="index.html" class="brand" aria-label="Guided home">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3" />
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />
+              </svg>
+            </span>
+            <span class="brand-name">Guided</span>
+          </a>
+          <span class="footer-copy">© 2026 Guided. All rights reserved. · <a href="/privacy.html">Privacy Policy</a> · <a href="/terms.html">Terms of Service</a></span>
+        </div>
+        <nav class="footer-nav" aria-label="Footer">
+          <a href="directory.html">Directory</a>
+          <a href="index.html#signup">Early access</a>
+          <a href="mailto:hello@guided.build">Contact</a>
+        </nav>
+      </div>
+    </footer>
+
+    <script src="script.js" defer></script>
+  </body>
+</html>
