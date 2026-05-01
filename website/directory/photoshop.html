@@ -9,6 +9,117 @@
       content="A curated list of the best places to learn Adobe Photoshop — tutorials, channels, and reference sites."
     />
     <meta name="theme-color" content="#0b0d10" />
+    <style>
+      html.is-locked body > *:not(#gate-overlay) { display: none !important; }
+      #gate-overlay {
+        position: fixed; inset: 0; z-index: 999999;
+        background: #0f0f13;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+        color: #e6e8eb;
+      }
+      #gate-overlay .gate-card {
+        width: 100%; max-width: 360px;
+        padding: 32px;
+        background: #15181d;
+        border: 1px solid #23272e;
+        border-radius: 14px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+      }
+      #gate-overlay .gate-logo {
+        display: flex; align-items: center; justify-content: center;
+        gap: 10px; margin-bottom: 24px;
+      }
+      #gate-overlay .gate-mark {
+        width: 32px; height: 32px;
+        border-radius: 9px;
+        background: linear-gradient(135deg, #a78bfa, #6366f1);
+        display: grid; place-items: center;
+        box-shadow: 0 6px 20px rgba(167, 139, 250, 0.35);
+      }
+      #gate-overlay .gate-mark svg { width: 20px; height: 20px; color: #fff; }
+      #gate-overlay .gate-name {
+        font-size: 17px; font-weight: 700; letter-spacing: -0.01em;
+      }
+      #gate-overlay input {
+        width: 100%; box-sizing: border-box;
+        padding: 12px 14px;
+        background: #0b0d10;
+        border: 1px solid #2f3441;
+        border-radius: 8px;
+        color: #e6e8eb;
+        font-size: 14px; outline: none;
+        margin-bottom: 12px;
+      }
+      #gate-overlay input:focus { border-color: #a78bfa; }
+      #gate-overlay button {
+        width: 100%; padding: 12px;
+        background: #a78bfa; color: #0b0d10;
+        border: none; border-radius: 8px;
+        font-size: 14px; font-weight: 600; cursor: pointer;
+        transition: background 0.18s ease, color 0.18s ease;
+      }
+      #gate-overlay button:hover { background: #8b5cf6; color: #fff; }
+      @keyframes gateShake {
+        0%, 100% { transform: translateX(0); }
+        20%, 60% { transform: translateX(-8px); }
+        40%, 80% { transform: translateX(8px); }
+      }
+      #gate-overlay .gate-card.shake {
+        animation: gateShake 0.4s ease-in-out;
+        border-color: #f87171;
+      }
+    </style>
+    <script>
+      (function () {
+        try {
+          if (sessionStorage.getItem('guided.unlocked') === 'true') return;
+        } catch (e) {}
+        document.documentElement.classList.add('is-locked');
+
+        function build() {
+          var overlay = document.createElement('div');
+          overlay.id = 'gate-overlay';
+          overlay.innerHTML =
+            '<form class="gate-card" autocomplete="off">' +
+            '<div class="gate-logo">' +
+            '<span class="gate-mark">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+            '<circle cx="12" cy="12" r="3" />' +
+            '<path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1" />' +
+            '</svg>' +
+            '</span>' +
+            '<span class="gate-name">Guided</span>' +
+            '</div>' +
+            '<input type="password" name="p" placeholder="Password" autocomplete="off" autofocus />' +
+            '<button type="submit">Enter</button>' +
+            '</form>';
+          document.body.insertBefore(overlay, document.body.firstChild);
+          var card = overlay.querySelector('.gate-card');
+          var form = overlay.querySelector('form');
+          var input = overlay.querySelector('input');
+          form.addEventListener('submit', function (e) {
+            e.preventDefault();
+            if (input.value === 'gulley_guided2026') {
+              try { sessionStorage.setItem('guided.unlocked', 'true'); } catch (err) {}
+              document.documentElement.classList.remove('is-locked');
+              overlay.remove();
+            } else {
+              card.classList.remove('shake');
+              void card.offsetWidth;
+              card.classList.add('shake');
+              input.value = '';
+              input.focus();
+            }
+          });
+          setTimeout(function () { input.focus(); }, 0);
+        }
+
+        if (document.body) build();
+        else document.addEventListener('DOMContentLoaded', build, { once: true });
+      })();
+    </script>
     <link rel="stylesheet" href="../styles.css" />
   </head>
   <body>
