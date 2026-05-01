@@ -3,8 +3,8 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Sign in — Guided</title>
-    <meta name="description" content="Sign in to your Guided account." />
+    <title>Signed in — Guided</title>
+    <meta name="description" content="You're signed in to Guided." />
     <meta name="theme-color" content="#0b0d10" />
     <style>
       html.is-locked body > *:not(#gate-overlay) { display: none !important; }
@@ -68,21 +68,45 @@
         border-color: #f87171;
       }
 
-      .signin-shell {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 24px;
-        padding: 32px 0;
-      }
-      #clerk-mount {
-        display: flex;
-        justify-content: center;
-        width: 100%;
-      }
-      .signin-fallback {
-        color: var(--text-muted);
+      .success-shell {
+        max-width: 480px;
+        margin: 0 auto;
         text-align: center;
+      }
+      .success-card {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        padding: 40px 32px;
+      }
+      .success-mark {
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: rgba(74, 222, 128, 0.14);
+        color: #4ade80;
+        display: grid;
+        place-items: center;
+        margin: 0 auto 20px;
+      }
+      .success-mark svg { width: 28px; height: 28px; }
+      .success-card h1 {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        margin-bottom: 10px;
+      }
+      .success-card p {
+        color: var(--text-muted);
+        font-size: 15px;
+        line-height: 1.55;
+      }
+      .success-actions {
+        margin-top: 24px;
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        flex-wrap: wrap;
       }
     </style>
     <script>
@@ -160,17 +184,18 @@
     <main>
       <section>
         <div class="container">
-          <header class="section-head" style="text-align: center; margin-left: auto; margin-right: auto;">
-            <span class="section-eyebrow">Account</span>
-            <h1 class="section-title">Sign in to Guided</h1>
-            <p class="section-lede" style="margin-left: auto; margin-right: auto;">
-              Welcome back. Sign in to manage your subscription.
-            </p>
-          </header>
-
-          <div class="signin-shell">
-            <div id="clerk-mount">
-              <p class="signin-fallback">Loading sign-in…</p>
+          <div class="success-shell">
+            <div class="success-card">
+              <div class="success-mark" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12" />
+                </svg>
+              </div>
+              <h1>You're signed in to Guided.</h1>
+              <p>You can close this tab. The app should already be picking up where you left off.</p>
+              <div class="success-actions">
+                <a href="account.html" class="btn btn-secondary">Manage account</a>
+              </div>
             </div>
           </div>
         </div>
@@ -199,133 +224,5 @@
         </nav>
       </div>
     </footer>
-
-    <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"
-            data-clerk-publishable-key="pk_test_cHJvcGVyLWJhdC00LmNsZXJrLmFjY291bnRzLmRldiQ"></script>
-    <script>
-      (function () {
-        var CLERK_KEY = 'pk_test_cHJvcGVyLWJhdC00LmNsZXJrLmFjY291bnRzLmRldiQ';
-
-        function getQueryParams() {
-          try { return new URLSearchParams(window.location.search); } catch (e) { return new URLSearchParams(); }
-        }
-
-        function isAppFlow() {
-          return getQueryParams().get('source') === 'app';
-        }
-
-        function getRedirectUrl() {
-          if (isAppFlow()) {
-            // Stay on this page so we can capture the session token after sign-in
-            // and bounce to the guided:// deep link.
-            return window.location.href;
-          }
-          try {
-            var params = getQueryParams();
-            var dest = params.get('redirect') || 'account';
-            var plan = params.get('plan');
-            if (dest === 'pricing') {
-              return 'pricing.html' + (plan ? '?plan=' + encodeURIComponent(plan) : '');
-            }
-            if (dest === 'index' || dest === 'home') return 'index.html';
-            return 'account.html';
-          } catch (e) {
-            return 'account.html';
-          }
-        }
-
-        async function ensureClerk() {
-          if (typeof window.Clerk === 'undefined') {
-            await new Promise(function (resolve) {
-              var attempts = 0;
-              var t = setInterval(function () {
-                attempts += 1;
-                if (typeof window.Clerk !== 'undefined' || attempts > 50) {
-                  clearInterval(t);
-                  resolve();
-                }
-              }, 100);
-            });
-          }
-          if (typeof window.Clerk === 'undefined') {
-            throw new Error('Clerk failed to load.');
-          }
-          var c = new window.Clerk(CLERK_KEY);
-          await c.load();
-          return c;
-        }
-
-        async function handleAppDeepLink(clerk) {
-          var mount = document.getElementById('clerk-mount');
-          if (mount) {
-            mount.innerHTML = '<p class="signin-fallback">Returning to Guided…</p>';
-          }
-          try {
-            var token = await clerk.session.getToken();
-            var user = clerk.user;
-            var email = user && user.primaryEmailAddress ? user.primaryEmailAddress.emailAddress : '';
-            var userId = user ? user.id : '';
-
-            var deepLink = 'guided://auth-callback' +
-              '?token=' + encodeURIComponent(token || '') +
-              '&userId=' + encodeURIComponent(userId) +
-              '&email=' + encodeURIComponent(email);
-
-            // Trigger the deep link first — the OS will prompt the user to open Guided.
-            window.location.href = deepLink;
-
-            // Then move the tab to the success page so the user has somewhere clean to land.
-            setTimeout(function () {
-              window.location.href = 'auth-success.html';
-            }, 1500);
-          } catch (err) {
-            if (mount) {
-              mount.innerHTML = '<p class="signin-fallback" style="color: #f87171;">' +
-                (err.message || 'Could not return to Guided.') + '</p>';
-            }
-          }
-        }
-
-        (async function init() {
-          var mount = document.getElementById('clerk-mount');
-          var appFlow = isAppFlow();
-          var redirectUrl = getRedirectUrl();
-          try {
-            var clerk = await ensureClerk();
-
-            if (clerk.user) {
-              if (appFlow) {
-                handleAppDeepLink(clerk);
-              } else {
-                window.location.href = redirectUrl;
-              }
-              return;
-            }
-
-            mount.innerHTML = '';
-            clerk.mountSignIn(mount, {
-              afterSignInUrl: redirectUrl,
-              afterSignUpUrl: redirectUrl,
-              redirectUrl: redirectUrl,
-            });
-
-            // Watch the session — once signed in, either bounce to the deep link (app flow)
-            // or follow the normal web redirect.
-            clerk.addListener(function (resources) {
-              if (resources && resources.user) {
-                if (appFlow) {
-                  handleAppDeepLink(clerk);
-                } else {
-                  window.location.href = redirectUrl;
-                }
-              }
-            });
-          } catch (err) {
-            mount.innerHTML = '<p class="signin-fallback" style="color: #f87171;">' +
-              (err.message || 'Could not load sign-in.') + '</p>';
-          }
-        })();
-      })();
-    </script>
   </body>
 </html>

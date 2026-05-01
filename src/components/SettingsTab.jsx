@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
-import { SignIn } from '@clerk/clerk-react';
-import Modal from './Modal.jsx';
 
+const SIGNIN_URL = 'https://guided.build/signin.html?source=app';
 const PRICING_URL = 'https://guided.build/pricing.html';
 const ACCOUNT_URL = 'https://guided.build/account.html';
 
@@ -16,6 +15,8 @@ export default function SettingsTab({
   subscriptionPlan,
   onSignOutGuided,
   backendUrl: _backendUrl,
+  deepLinkVerifying,
+  deepLinkError,
 }) {
   const [draft, setDraft] = useState(apiKey);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -23,7 +24,7 @@ export default function SettingsTab({
   const [startupBusy, setStartupBusy] = useState(false);
   const [projectsBase, setProjectsBase] = useState('');
 
-  const [signinOpen, setSigninOpen] = useState(false);
+  const [waitingForBrowserAuth, setWaitingForBrowserAuth] = useState(false);
   const [signOutBusy, setSignOutBusy] = useState(false);
 
   useEffect(() => {
@@ -47,10 +48,14 @@ export default function SettingsTab({
     };
   }, []);
 
-  // Auto-close the sign-in modal once Clerk reports the user as signed in.
+  // Once the deep-link callback completes (or surfaces an error), drop the waiting state.
   useEffect(() => {
-    if (signinOpen && clerk?.isSignedIn) setSigninOpen(false);
-  }, [signinOpen, clerk?.isSignedIn]);
+    if (clerk?.isSignedIn && waitingForBrowserAuth) setWaitingForBrowserAuth(false);
+  }, [clerk?.isSignedIn, waitingForBrowserAuth]);
+
+  useEffect(() => {
+    if (deepLinkError && waitingForBrowserAuth) setWaitingForBrowserAuth(false);
+  }, [deepLinkError, waitingForBrowserAuth]);
 
   async function changeProjectsBase() {
     if (!window.guided?.chooseProjectsBase) return;
@@ -84,6 +89,11 @@ export default function SettingsTab({
     }
   }
 
+  function startBrowserSignIn() {
+    setWaitingForBrowserAuth(true);
+    openExternal(SIGNIN_URL);
+  }
+
   async function handleSignOut() {
     if (signOutBusy) return;
     setSignOutBusy(true);
@@ -95,34 +105,47 @@ export default function SettingsTab({
   }
 
   const usingEnvKey = !apiKey && Boolean(envApiKey);
-  const clerkAvailable = Boolean(clerk?.available);
   const signedIn = Boolean(clerk?.isSignedIn);
 
   return (
     <div className="h-full overflow-y-auto px-3 py-3 space-y-5">
       <Section title="Guided Account">
-        {!clerkAvailable && (
-          <p className="text-[11px] leading-snug text-panel-muted">
-            Sign-in is unavailable. Set CLERK_PUBLISHABLE_KEY in .env to enable Guided
-            accounts and subscriptions.
-          </p>
-        )}
-
-        {clerkAvailable && !signedIn && (
+        {!signedIn && (
           <div className="space-y-2">
             <p className="text-[11px] leading-snug text-panel-muted">
-              Sign in to manage your subscription and let Guided handle API access for you.
+              Sign in opens guided.build in your browser. Once you sign in, the app
+              will pick it up automatically.
             </p>
-            <button
-              onClick={() => setSigninOpen(true)}
-              className="rounded-md bg-panel-accent/90 px-2.5 py-1 text-xs font-medium text-white shadow-sm transition-opacity hover:bg-panel-accent"
-            >
-              Sign in to Guided
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={startBrowserSignIn}
+                disabled={waitingForBrowserAuth || deepLinkVerifying}
+                className="rounded-md bg-panel-accent/90 px-2.5 py-1 text-xs font-medium text-white shadow-sm transition-opacity hover:bg-panel-accent disabled:opacity-50"
+              >
+                Sign in to Guided
+              </button>
+              {(waitingForBrowserAuth || deepLinkVerifying) && (
+                <span className="inline-flex items-center gap-1.5 text-[11px] text-panel-muted">
+                  <Spinner />
+                  {deepLinkVerifying ? 'Verifying…' : 'Waiting for browser…'}
+                </span>
+              )}
+            </div>
+            {waitingForBrowserAuth && !deepLinkVerifying && (
+              <button
+                onClick={() => setWaitingForBrowserAuth(false)}
+                className="text-[11px] text-panel-muted underline-offset-2 hover:text-panel-text hover:underline"
+              >
+                Cancel
+              </button>
+            )}
+            {deepLinkError && (
+              <p className="text-[11px] text-red-300">{deepLinkError}</p>
+            )}
           </div>
         )}
 
-        {clerkAvailable && signedIn && (
+        {signedIn && (
           <div className="space-y-2">
             <div className="rounded-md border border-panel-border bg-panel-bg px-2.5 py-2">
               <div className="text-xs text-panel-text break-all">
@@ -248,20 +271,6 @@ export default function SettingsTab({
           anywhere to show or hide Guided.
         </p>
       </Section>
-
-      {signinOpen && (
-        <Modal title="Sign in to Guided" onClose={() => setSigninOpen(false)} width="340px">
-          {clerkAvailable ? (
-            <div className="no-drag flex justify-center">
-              <SignIn routing="virtual" />
-            </div>
-          ) : (
-            <p className="text-[11px] text-red-300">
-              Clerk is not configured. Set CLERK_PUBLISHABLE_KEY in .env.
-            </p>
-          )}
-        </Modal>
-      )}
     </div>
   );
 }
@@ -269,6 +278,12 @@ export default function SettingsTab({
 function capitalize(s) {
   if (!s) return '';
   return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+function Spinner() {
+  return (
+    <span className="block h-3 w-3 animate-spin rounded-full border-2 border-panel-border border-t-panel-accent" />
+  );
 }
 
 function Switch({ checked, disabled, onClick }) {

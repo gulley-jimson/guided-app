@@ -10,6 +10,7 @@ import Onboarding from './components/Onboarding.jsx';
 import { useLocalState } from './hooks/useLocalState.js';
 import { useActiveApp } from './hooks/useActiveApp.js';
 import { useClerkAuth } from './hooks/useClerkAuth.js';
+import { useDeepLinkAuth } from './hooks/useDeepLinkAuth.js';
 import { ENV_API_KEY, BACKEND_URL, generateRoadmap } from './services/claude.js';
 import { ROADMAP_READY_MESSAGE } from './utils/offer.js';
 
@@ -44,9 +45,43 @@ export default function App() {
   const [subscriptionActive, setSubscriptionActive] = useState(false);
   const activeApp = useActiveApp();
   const clerk = useClerkAuth();
+  const deepLink = useDeepLinkAuth({ backendUrl: BACKEND_URL });
+
+  // Unified auth — deep-link wins when present (it's the explicit user intent
+  // from the browser sign-in flow). Embedded Clerk is the fallback path.
+  const auth = useMemo(() => {
+    if (deepLink.isSignedIn) {
+      return {
+        available: true,
+        isSignedIn: true,
+        userId: deepLink.userId,
+        email: deepLink.email,
+        getToken: deepLink.getToken,
+        source: 'deep-link',
+      };
+    }
+    return {
+      available: clerk.available,
+      isSignedIn: clerk.isSignedIn,
+      userId: clerk.userId,
+      email: clerk.email,
+      getToken: clerk.getToken,
+      source: 'clerk',
+    };
+  }, [
+    deepLink.isSignedIn,
+    deepLink.userId,
+    deepLink.email,
+    deepLink.getToken,
+    clerk.available,
+    clerk.isSignedIn,
+    clerk.userId,
+    clerk.email,
+    clerk.getToken,
+  ]);
 
   const apiKey = storedKey || ENV_API_KEY;
-  const usingSubscription = clerk.isSignedIn && subscriptionActive;
+  const usingSubscription = auth.isSignedIn && subscriptionActive;
   const onboardingComplete = Boolean(apiKey) || usingSubscription;
 
   const activeProject = useMemo(
@@ -64,13 +99,12 @@ export default function App() {
     }
   }, [projects, activeId, setActiveId]);
 
-  // Verify subscription state with the backend whenever Clerk reports a signed-in user.
-  // Runs unconditionally on signed-in changes — Settings needs to know whether a fresh signin
-  // already has an active subscription so it can show the right UI.
+  // Verify subscription state with the backend whenever a signed-in user appears,
+  // from either the embedded Clerk session or the deep-link callback.
   useEffect(() => {
     let cancelled = false;
     async function verify() {
-      if (!clerk.available || !clerk.isSignedIn || !clerk.userId) {
+      if (!auth.isSignedIn || !auth.userId) {
         if (!cancelled) {
           setSubscriptionActive(false);
           setSubscriptionPlan(null);
@@ -78,7 +112,7 @@ export default function App() {
         return;
       }
       try {
-        const res = await fetch(`${BACKEND_URL}/subscription/${encodeURIComponent(clerk.userId)}`);
+        const res = await fetch(`${BACKEND_URL}/subscription/${encodeURIComponent(auth.userId)}`);
         if (!res.ok) throw new Error('verify failed');
         const data = await res.json();
         if (cancelled) return;
@@ -92,7 +126,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, [clerk.available, clerk.isSignedIn, clerk.userId, setSubscriptionPlan]);
+  }, [auth.isSignedIn, auth.userId, setSubscriptionPlan]);
 
   function applySubscriptionUpdate({ active, plan }) {
     if (typeof active === 'boolean') setSubscriptionActive(active);
@@ -100,21 +134,20 @@ export default function App() {
   }
 
   async function signOutGuidedAccount() {
-    try {
-      await clerk.signOut?.();
-    } catch {}
+    try { await clerk.signOut?.(); } catch {}
+    try { deepLink.signOut(); } catch {}
     setSubscriptionActive(false);
     setSubscriptionPlan(null);
   }
 
   const getSessionToken = useCallback(async () => {
-    if (!clerk.available || !clerk.isSignedIn) return null;
+    if (!auth.isSignedIn) return null;
     try {
-      return await clerk.getToken();
+      return await auth.getToken();
     } catch {
       return null;
     }
-  }, [clerk]);
+  }, [auth]);
 
   const chatMode = usingSubscription ? 'subscription' : 'byok';
 
@@ -350,7 +383,7 @@ export default function App() {
           <Onboarding
             onSubmitKey={completeOnboarding}
             onSubscribeComplete={completeSubscriptionOnboarding}
-            clerk={clerk}
+            clerk={auth}
             backendUrl={BACKEND_URL}
           />
         </div>
@@ -429,12 +462,14 @@ export default function App() {
                 onSaveKey={setStoredKey}
                 theme={theme}
                 onThemeChange={setTheme}
-                clerk={clerk}
+                clerk={auth}
                 subscriptionActive={subscriptionActive}
                 subscriptionPlan={subscriptionPlan}
                 onSubscriptionStatusChange={applySubscriptionUpdate}
                 onSignOutGuided={signOutGuidedAccount}
                 backendUrl={BACKEND_URL}
+                deepLinkVerifying={deepLink.verifying}
+                deepLinkError={deepLink.verifyError}
               />
             )}
           </div>

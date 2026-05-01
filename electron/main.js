@@ -25,6 +25,71 @@ let isQuitting = false;
 let activeAppPollTimer = null;
 let lastActiveApp = null;
 let positionSaveTimer = null;
+let pendingDeepLink = null;
+
+// ---------- guided:// custom protocol ----------
+
+if (process.defaultApp) {
+  // Dev mode — register the script entry point so the OS can re-launch us.
+  if (process.argv.length >= 2) {
+    app.setAsDefaultProtocolClient('guided', process.execPath, [path.resolve(process.argv[1])]);
+  }
+} else {
+  app.setAsDefaultProtocolClient('guided');
+}
+
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', (_event, commandLine) => {
+    // Another launch happened — usually because the user clicked guided:// in the browser.
+    // Surface our window and process the URL.
+    showWindow();
+    const url = findDeepLinkUrl(commandLine);
+    if (url) handleAuthDeepLink(url);
+  });
+}
+
+app.on('open-url', (event, url) => {
+  // macOS delivers protocol URLs through this event.
+  event.preventDefault();
+  if (url) handleAuthDeepLink(url);
+});
+
+function findDeepLinkUrl(args) {
+  if (!Array.isArray(args)) return null;
+  return args.find((a) => typeof a === 'string' && a.startsWith('guided://')) || null;
+}
+
+function handleAuthDeepLink(rawUrl) {
+  let parsed;
+  try {
+    parsed = new URL(rawUrl);
+  } catch {
+    return;
+  }
+  if (parsed.protocol !== 'guided:') return;
+  if (parsed.hostname !== 'auth-callback') return;
+
+  const token = parsed.searchParams.get('token');
+  if (!token) return;
+
+  const payload = {
+    token,
+    userId: parsed.searchParams.get('userId') || null,
+    email: parsed.searchParams.get('email') || null,
+    plan: parsed.searchParams.get('plan') || null,
+  };
+
+  if (win && !win.isDestroyed() && win.webContents && !win.webContents.isDestroyed()) {
+    showWindow();
+    win.webContents.send('auth:deep-link', payload);
+  } else {
+    // Window isn't ready yet — buffer until createWindow runs.
+    pendingDeepLink = payload;
+  }
+}
 
 function createWindow() {
   const { x, y, width, height } = resolveInitialState();
@@ -74,6 +139,13 @@ function createWindow() {
   } else {
     win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'));
   }
+
+  win.webContents.once('did-finish-load', () => {
+    if (pendingDeepLink) {
+      win.webContents.send('auth:deep-link', pendingDeepLink);
+      pendingDeepLink = null;
+    }
+  });
 }
 
 function clampWidth(value) {
@@ -546,6 +618,10 @@ app.whenReady().then(() => {
   createTray();
   startActiveAppPolling();
   registerGlobalShortcuts();
+
+  // First-launch case on Windows: the OS may have invoked us with the deep-link URL in argv.
+  const initialUrl = findDeepLinkUrl(process.argv);
+  if (initialUrl) handleAuthDeepLink(initialUrl);
 });
 
 app.on('before-quit', () => {

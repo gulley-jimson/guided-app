@@ -29,4 +29,9 @@ contextBridge.exposeInMainWorld('guided', {
   saveProjectImage: (projectId, fileName, dataUrl) =>
     ipcRenderer.invoke('projects:saveImage', projectId, fileName, dataUrl),
   deleteProjectFolder: (projectId) => ipcRenderer.invoke('projects:deleteFolder', projectId),
+  onAuthDeepLink: (callback) => {
+    const handler = (_event, payload) => callback(payload);
+    ipcRenderer.on('auth:deep-link', handler);
+    return () => ipcRenderer.removeListener('auth:deep-link', handler);
+  },
 });
