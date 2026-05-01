@@ -2,7 +2,7 @@ const { app, BrowserWindow, screen, Tray, Menu, nativeImage, ipcMain, desktopCap
 const path = require('path');
 const fs = require('fs');
 const zlib = require('zlib');
-
+const { autoUpdater } = require('electron-updater');
 let activeWin = null;
 try {
   activeWin = require('active-win');
@@ -618,6 +618,10 @@ app.whenReady().then(() => {
   createTray();
   startActiveAppPolling();
   registerGlobalShortcuts();
+  // Auto-updater — checks GitHub releases on startup (production only)
+if (!isDev) {
+  autoUpdater.checkForUpdatesAndNotify();
+}
 
   // First-launch case on Windows: the OS may have invoked us with the deep-link URL in argv.
   const initialUrl = findDeepLinkUrl(process.argv);
