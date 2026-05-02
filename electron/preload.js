@@ -45,5 +45,5 @@ contextBridge.exposeInMainWorld('guided', {
     return () => ipcRenderer.removeListener('update:downloaded', handler);
   },
   checkForUpdates: () => ipcRenderer.invoke('update:check'),
-  getVersion: () => ipcRenderer.invoke('app:version'),
+  getVersion: () => ipcRenderer.invoke('app:get-version'),
 });

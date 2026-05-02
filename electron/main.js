@@ -616,7 +616,7 @@ ipcMain.handle('update:check', () => {
   if (!isDev) autoUpdater.checkForUpdates();
 });
 
-ipcMain.handle('app:version', () => app.getVersion());
+ipcMain.handle('app:get-version', () => app.getVersion());
 
 app.whenReady().then(() => {
   loadSettings();
