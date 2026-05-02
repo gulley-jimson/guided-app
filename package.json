@@ -60,7 +60,10 @@
       "shortcutName": "Guided"
     },
     "mac": {
-      "target": "dmg",
+      "target": {
+        "target": "dmg",
+        "arch": ["universal"]
+      },
       "icon": "build/icon.icns",
       "category": "public.app-category.developer-tools"
     },
