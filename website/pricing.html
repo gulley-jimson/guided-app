@@ -172,6 +172,12 @@
         text-align: center;
       }
       .plan-status.error { color: #f87171; }
+      .plan-topup-note {
+        margin-top: -4px;
+        text-align: center;
+        font-size: 12px;
+        color: var(--text-muted);
+      }
     </style>
     <script>
       (function () {
@@ -266,12 +272,13 @@
               <p class="plan-tagline">Cancel anytime.</p>
               <ul class="plan-features">
                 <li>Full access to Guided</li>
-                <li>API access included</li>
+                <li>Generous monthly usage included</li>
                 <li>Always-up-to-date model</li>
               </ul>
               <button class="btn btn-secondary plan-cta" data-checkout="monthly" type="button">
                 Get Started
               </button>
+              <p class="plan-topup-note">Need more? Top up anytime for $5.</p>
               <p class="plan-status" data-status-for="monthly"></p>
             </article>
 
@@ -285,12 +292,14 @@
               <p class="plan-tagline">Save 31% — about $8.25/month.</p>
               <ul class="plan-features">
                 <li>Everything in Monthly</li>
+                <li>Generous monthly usage included</li>
                 <li>Two months free</li>
                 <li>Priority email support</li>
               </ul>
               <button class="btn btn-primary plan-cta" data-checkout="yearly" type="button">
                 Get Started
               </button>
+              <p class="plan-topup-note">Need more? Top up anytime for $5.</p>
               <p class="plan-status" data-status-for="yearly"></p>
             </article>
           </div>

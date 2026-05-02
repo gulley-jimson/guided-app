@@ -3,7 +3,7 @@ require('dotenv').config();
 const Fastify = require('fastify');
 const cors = require('@fastify/cors');
 const Stripe = require('stripe');
-const { verifyToken } = require('@clerk/backend');
+const { verifyToken, createClerkClient } = require('@clerk/backend');
 const Anthropic = require('@anthropic-ai/sdk');
 
 const db = require('./db');
@@ -11,8 +11,22 @@ const db = require('./db');
 const PORT = parseInt(process.env.PORT ?? '3001', 10);
 const CHECKOUT_SUCCESS_URL = process.env.CHECKOUT_SUCCESS_URL ?? 'https://guided.build/checkout-success';
 const CHECKOUT_CANCEL_URL = process.env.CHECKOUT_CANCEL_URL ?? 'https://guided.build/checkout-cancel';
+const TOPUP_SUCCESS_URL = process.env.TOPUP_SUCCESS_URL ?? 'https://guided.build/auth-success.html';
+const TOPUP_CANCEL_URL = process.env.TOPUP_CANCEL_URL ?? 'https://guided.build/account.html';
+const TOPUP_PRICE_ID = process.env.STRIPE_PRICE_TOPUP ?? 'price_1TSRkQ2EDpCCXFIud52WGU4x';
+
+// Usage limits (USD).
+const MONTHLY_USAGE_LIMIT = 4.0;
+const TOPUP_AMOUNT = 4.0;
+
+// Claude Sonnet pricing (USD per token).
+const PRICE_PER_INPUT_TOKEN = 0.000003;
+const PRICE_PER_OUTPUT_TOKEN = 0.000015;
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+const clerkClient = process.env.CLERK_SECRET_KEY
+  ? createClerkClient({ secretKey: process.env.CLERK_SECRET_KEY })
+  : null;
 
 const fastify = Fastify({ logger: true });
 
@@ -75,6 +89,88 @@ function isActiveStatus(status) {
 
 function safeMs(seconds) {
   return typeof seconds === 'number' ? seconds * 1000 : null;
+}
+
+// ---------- usage tracking (Clerk privateMetadata) ----------
+
+function firstOfThisMonthIso() {
+  const now = new Date();
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString();
+}
+
+function isPastMonth(resetDateIso) {
+  if (!resetDateIso) return true;
+  const stored = new Date(resetDateIso);
+  if (Number.isNaN(stored.getTime())) return true;
+  const now = new Date();
+  if (stored.getUTCFullYear() < now.getUTCFullYear()) return true;
+  if (stored.getUTCFullYear() === now.getUTCFullYear()
+      && stored.getUTCMonth() < now.getUTCMonth()) return true;
+  return false;
+}
+
+function normalizeUsage(meta) {
+  return {
+    usageThisMonth: typeof meta?.usageThisMonth === 'number' ? meta.usageThisMonth : 0,
+    usageResetDate: typeof meta?.usageResetDate === 'string'
+      ? meta.usageResetDate
+      : firstOfThisMonthIso(),
+    bonusCredits: typeof meta?.bonusCredits === 'number' ? meta.bonusCredits : 0,
+  };
+}
+
+// Pull current usage state, rolling over to the new month if needed.
+async function getUsageState(userId) {
+  if (!clerkClient) {
+    const err = new Error('Server misconfigured: CLERK_SECRET_KEY not set');
+    err.statusCode = 500;
+    throw err;
+  }
+  const user = await clerkClient.users.getUser(userId);
+  const current = normalizeUsage(user.privateMetadata);
+
+  if (isPastMonth(current.usageResetDate)) {
+    const reset = {
+      ...current,
+      usageThisMonth: 0,
+      usageResetDate: firstOfThisMonthIso(),
+    };
+    await clerkClient.users.updateUserMetadata(userId, {
+      privateMetadata: reset,
+    });
+    return reset;
+  }
+  return current;
+}
+
+function isOverLimit(usage) {
+  return (usage.usageThisMonth - usage.bonusCredits) >= MONTHLY_USAGE_LIMIT;
+}
+
+async function addUsage(userId, deltaUsd) {
+  if (!clerkClient) return;
+  if (!Number.isFinite(deltaUsd) || deltaUsd <= 0) return;
+  // Re-read to avoid clobbering concurrent updates as much as we can without a
+  // proper lock — Clerk metadata writes are last-writer-wins.
+  const user = await clerkClient.users.getUser(userId);
+  const current = normalizeUsage(user.privateMetadata);
+  const next = {
+    ...current,
+    usageThisMonth: Number((current.usageThisMonth + deltaUsd).toFixed(6)),
+  };
+  await clerkClient.users.updateUserMetadata(userId, { privateMetadata: next });
+}
+
+async function addBonusCredits(userId, deltaUsd) {
+  if (!clerkClient) return;
+  if (!Number.isFinite(deltaUsd) || deltaUsd <= 0) return;
+  const user = await clerkClient.users.getUser(userId);
+  const current = normalizeUsage(user.privateMetadata);
+  const next = {
+    ...current,
+    bonusCredits: Number((current.bonusCredits + deltaUsd).toFixed(6)),
+  };
+  await clerkClient.users.updateUserMetadata(userId, { privateMetadata: next });
 }
 
 // ---------- routes ----------
@@ -160,6 +256,24 @@ fastify.post('/webhook', async (req, reply) => {
         const subscriptionId = typeof session.subscription === 'string' ? session.subscription : null;
         const plan = session.metadata?.plan;
 
+        // Top-up purchase — grant bonus credits and skip the subscription path.
+        if (session.mode === 'payment' || session.metadata?.kind === 'topup') {
+          let isTopup = session.metadata?.kind === 'topup';
+          if (!isTopup) {
+            // Fall back to checking the line items for the configured top-up price.
+            try {
+              const items = await stripe.checkout.sessions.listLineItems(session.id, { limit: 5 });
+              isTopup = items.data?.some((li) => li.price?.id === TOPUP_PRICE_ID);
+            } catch {
+              // ignore — without confirmation we won't grant credits
+            }
+          }
+          if (isTopup && userId) {
+            await addBonusCredits(userId, TOPUP_AMOUNT);
+          }
+          break;
+        }
+
         if (subscriptionId && userId) {
           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
           const priceId = subscription.items?.data?.[0]?.price?.id;
@@ -229,6 +343,33 @@ fastify.post('/webhook', async (req, reply) => {
   return { received: true };
 });
 
+fastify.post('/create-topup-session', async (req, reply) => {
+  if (!stripe) return reply.code(500).send({ error: 'Stripe not configured' });
+  try {
+    const userId = await verifyClerkToken(req.body?.token);
+    let customerId = db.getSubscription(userId)?.stripeCustomerId ?? undefined;
+
+    const session = await stripe.checkout.sessions.create({
+      mode: 'payment',
+      payment_method_types: ['card'],
+      line_items: [{ price: TOPUP_PRICE_ID, quantity: 1 }],
+      client_reference_id: userId,
+      customer: customerId,
+      metadata: { clerkUserId: userId, kind: 'topup' },
+      payment_intent_data: {
+        metadata: { clerkUserId: userId, kind: 'topup' },
+      },
+      success_url: TOPUP_SUCCESS_URL,
+      cancel_url: TOPUP_CANCEL_URL,
+    });
+
+    return { url: session.url, id: session.id };
+  } catch (err) {
+    fastify.log.error({ err }, 'topup session error');
+    return reply.code(err.statusCode ?? 400).send({ error: err.message });
+  }
+});
+
 fastify.post('/portal', async (req, reply) => {
   if (!stripe) return reply.code(500).send({ error: 'Stripe not configured' });
   try {
@@ -283,6 +424,19 @@ fastify.post('/chat', async (req, reply) => {
     return reply.code(400).send({ error: 'messages required' });
   }
 
+  // Roll over the month if needed, then bail with 402 if the user is over their
+  // monthly limit (after applying any bonus credits from top-ups).
+  let usage;
+  try {
+    usage = await getUsageState(userId);
+  } catch (err) {
+    fastify.log.error({ err }, 'usage lookup failed');
+    return reply.code(500).send({ error: 'Could not check usage' });
+  }
+  if (isOverLimit(usage)) {
+    return reply.code(402).send({ error: 'limit_reached' });
+  }
+
   reply.hijack();
   // hijack() bypasses fastify-cors' onSend hook, so we have to write the CORS
   // headers ourselves before the streamed response starts.
@@ -322,7 +476,20 @@ fastify.post('/chat', async (req, reply) => {
       send('delta', { text: delta });
     });
 
-    await stream.finalMessage();
+    const finalMessage = await stream.finalMessage();
+
+    // Bill the user. Cache tokens are billed at different rates by Anthropic
+    // but the spec says input + output, so we keep it simple.
+    const inputTokens = finalMessage?.usage?.input_tokens ?? 0;
+    const outputTokens = finalMessage?.usage?.output_tokens ?? 0;
+    const cost = inputTokens * PRICE_PER_INPUT_TOKEN
+      + outputTokens * PRICE_PER_OUTPUT_TOKEN;
+    if (cost > 0) {
+      addUsage(userId, cost).catch((err) => {
+        fastify.log.error({ err, userId, cost }, 'failed to record usage');
+      });
+    }
+
     if (!aborted) send('done', {});
   } catch (err) {
     fastify.log.error({ err }, 'chat stream error');

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { streamChat } from '../services/claude.js';
+import { streamChat, BACKEND_URL } from '../services/claude.js';
 import { splitChips } from '../utils/chips.js';
 import { shouldCapture } from '../utils/triggers.js';
 import {
@@ -560,6 +560,18 @@ export default function ChatTab({
     }
   }
 
+  async function requestTopup() {
+    try {
+      const token = await getSessionToken?.();
+      if (!token) return;
+      if (window.guided?.openTopup) {
+        await window.guided.openTopup(token, BACKEND_URL);
+      }
+    } catch {
+      // Best-effort — failures here shouldn't block the chat.
+    }
+  }
+
   function continueAfterCutoff(recoveryId, cutOffId) {
     if (sending) return;
     // Drop the recovery prompt; retry() will reset the cut-off message and
@@ -733,6 +745,10 @@ export default function ChatTab({
             }
 
             const isLast = i === messages.length - 1;
+
+            if (m.error && m.errorKind === 'limit_reached') {
+              return <LimitReachedBubble key={m.id} onGetMore={requestTopup} />;
+            }
 
             if (m.error) {
               return (
@@ -1213,6 +1229,27 @@ function ChipBar({ chips, multi, selected, sending, onSingle, onToggle, onContin
 function Caret() {
   return (
     <span className="ml-0.5 inline-block h-3.5 w-1 translate-y-0.5 animate-pulse bg-panel-muted/80 align-middle" />
+  );
+}
+
+function LimitReachedBubble({ onGetMore }) {
+  return (
+    <div className="flex justify-start">
+      <div className="max-w-[85%] rounded-lg border border-panel-accent/40 bg-panel-accent/10 px-3 py-2.5 text-sm leading-snug text-panel-text">
+        <div className="font-medium">You&apos;ve reached your monthly limit.</div>
+        <div className="mt-1 text-[12px] text-panel-muted">
+          Top up to keep chatting with Guided this month.
+        </div>
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          <button
+            onClick={onGetMore}
+            className="no-drag rounded-md bg-panel-accent/90 px-2.5 py-1 text-[11px] font-medium text-white shadow-sm transition-colors hover:bg-panel-accent"
+          >
+            Get more
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -46,4 +46,5 @@ contextBridge.exposeInMainWorld('guided', {
   },
   checkForUpdates: () => ipcRenderer.invoke('update:check'),
   getVersion: () => ipcRenderer.invoke('app:get-version'),
+  openTopup: (token, backendUrl) => ipcRenderer.invoke('open:topup', token, backendUrl),
 });

@@ -618,6 +618,26 @@ ipcMain.handle('update:check', () => {
 
 ipcMain.handle('app:get-version', () => app.getVersion());
 
+ipcMain.handle('open:topup', async (_event, token, backendUrl) => {
+  if (!token || typeof token !== 'string') return { ok: false, error: 'Missing token' };
+  if (!backendUrl || typeof backendUrl !== 'string') return { ok: false, error: 'Missing backend URL' };
+  try {
+    const res = await fetch(`${backendUrl.replace(/\/$/, '')}/create-topup-session`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data?.url) {
+      return { ok: false, error: data?.error || `Backend error (${res.status})` };
+    }
+    await shell.openExternal(data.url);
+    return { ok: true };
+  } catch (err) {
+    return { ok: false, error: err?.message ?? String(err) };
+  }
+});
+
 app.whenReady().then(() => {
   loadSettings();
   createWindow();
